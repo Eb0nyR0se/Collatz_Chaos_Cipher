@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
-from cipher import signal_spiral_encrypt  # Adjust import path as needed
+from cipher import signal_spiral_encrypt  # Make sure this imports your float-based cipher
 
 def setup_logging(debug=False):
     """Configure logging."""
@@ -23,79 +23,73 @@ def validate_positive_int(value, name):
     if value <= 0:
         raise ValueError(f"{name} must be a positive integer.")
 
-def hamming_distance(a, b):
-    """Compute the number of differing bits between two integers."""
-    return bin(a ^ b).count('1')
-
-def extract_int(val):
-    """Recursively extract an int from nested tuples or lists."""
+def extract_float(val):
+    """Recursively extract a float from nested tuples or lists."""
     if isinstance(val, (tuple, list)):
-        return extract_int(val[0])
-    return int(val)
+        return extract_float(val[0])
+    return float(val)
 
 def generate_surface_data(block, key_start, key_end, steps, rounds):
     """
-    Generate 3D surface data: block values, waveform LSB, and bit diffusion.
+    Generate 3D surface data: block values, waveform intensity, and diffusion metric.
 
     Returns:
-        keys: np.array of keys
-        values_matrix: 2D np.array of block values
-        waveform_matrix: 2D np.array of waveform LSB values
-        bit_diffusion_matrix: 2D np.array of bit-level diffusion values
+        keys: np.array of keys (float)
+        values_matrix: 2D np.array of block values (float)
+        waveform_matrix: 2D np.array of waveform intensity (float)
+        diffusion_matrix: 2D np.array of float diffusion values
     """
-    keys = np.linspace(key_start, key_end, steps, dtype=np.uint64)
+    keys = np.linspace(key_start, key_end, steps)  # float keys
     values_matrix = np.zeros((steps, rounds))
     waveform_matrix = np.zeros((steps, rounds))
-    bit_diffusion_matrix = np.zeros((steps, rounds))
+    diffusion_matrix = np.zeros((steps, rounds))
 
     for i, k in enumerate(keys):
-        key_int = extract_int(k)  # unwrap key if nested tuple/list
-        ciphertext, history, waveform = signal_spiral_encrypt(block, key_int, rounds=rounds)
+        ciphertext, history, waveform = signal_spiral_encrypt(block, k, rounds=rounds)
 
-        # Safely unwrap integers from history
-        block_values = [extract_int(h[0]) for h in history]
+        block_values = [extract_float(h[0]) for h in history]
         values_matrix[i, :] = block_values
 
-        # Safely unwrap waveform integers (if nested)
-        waveform_vals = [extract_int(w) for w in waveform]
+        waveform_vals = [extract_float(w) for w in waveform]
         waveform_matrix[i, :] = waveform_vals
 
-        # Compute bit diffusion (Hamming distance between rounds)
-        bit_diffusion = [0]  # no previous round for first
+        # Diffusion metric for floats: normalized absolute difference between rounds
+        diffusion = [0.0]  # no previous round for first
         for prev, curr in zip(block_values[:-1], block_values[1:]):
-            bit_diffusion.append(hamming_distance(prev, curr))
-        bit_diffusion_matrix[i, :] = bit_diffusion
+            diff = abs(curr - prev) / (abs(prev) + 1e-9)  # normalize, avoid div0
+            diffusion.append(diff)
+        diffusion_matrix[i, :] = diffusion
 
-        logging.debug(f"Processed key {key_int}")
+        logging.debug(f"Processed key {k}")
 
-    return keys, values_matrix, waveform_matrix, bit_diffusion_matrix
+    return keys, values_matrix, waveform_matrix, diffusion_matrix
 
-def plot_surface(keys, values_matrix, waveform_matrix, bit_diffusion_matrix,
+def plot_surface(keys, values_matrix, waveform_matrix, diffusion_matrix,
                  rounds, color_by='waveform', save_path=None, interactive=False):
     """
-    Plot 3D surface of block values colored by waveform or bit diffusion.
+    Plot 3D surface of block values colored by waveform or diffusion.
 
     Args:
         keys: np.array of keys
         values_matrix: 2D np.array of block values
-        waveform_matrix: 2D np.array of waveform LSB values
-        bit_diffusion_matrix: 2D np.array of bit diffusion values
+        waveform_matrix: 2D np.array of waveform intensity
+        diffusion_matrix: 2D np.array of diffusion metric
         rounds: number of rounds (int)
-        color_by: 'waveform' or 'bit_diffusion'
+        color_by: 'waveform' or 'diffusion'
         save_path: optional file path to save the plot
         interactive: if True, enable interactive plotting
     """
     x, y = np.meshgrid(np.arange(rounds), np.arange(len(keys)))
     z = values_matrix
 
-    if color_by == 'bit_diffusion':
-        w = bit_diffusion_matrix / 64
-        cmap = cm.get_cmap('plasma')  # <-- get colormap by string name
-        label = 'Bit Diffusion (Normalized Hamming Distance)'
+    if color_by == 'diffusion':
+        w = diffusion_matrix
+        cmap = cm.get_cmap('plasma')
+        label = 'Diffusion (Normalized Abs Difference)'
     else:
-        w = waveform_matrix / 255
-        cmap = cm.get_cmap('viridis')  # <-- get colormap by string name
-        label = 'Waveform LSB Intensity'
+        w = waveform_matrix / 255.0  # waveform scaled to [0..1]
+        cmap = cm.get_cmap('viridis')
+        label = 'Waveform Intensity'
 
     fig = plt.figure(figsize=(12, 8))
     ax = fig.add_subplot(111, projection='3d')
@@ -122,15 +116,16 @@ def plot_surface(keys, values_matrix, waveform_matrix, bit_diffusion_matrix,
         print(f"Saved plot to {save_path}")
     else:
         plt.show()
+
 def main():
-    parser = argparse.ArgumentParser(description="3D Encryption Surface Visualization for Collatz Chaos Cipher")
-    parser.add_argument("--block", type=lambda x: int(x, 0), default=0x123456, help="Plaintext block (default: 0x123456)")
-    parser.add_argument("--key-start", type=lambda x: int(x, 0), default=100000, help="Start key range (default: 100000)")
-    parser.add_argument("--key-end", type=lambda x: int(x, 0), default=1000000, help="End key range (default: 1000000)")
+    parser = argparse.ArgumentParser(description="3D Encryption Surface Visualization for Float Collatz Chaos Cipher")
+    parser.add_argument("--block", type=float, default=12345.6789, help="Plaintext block (float, default: 12345.6789)")
+    parser.add_argument("--key-start", type=float, default=100000.0, help="Start key range (float, default: 100000.0)")
+    parser.add_argument("--key-end", type=float, default=1000000.0, help="End key range (float, default: 1000000.0)")
     parser.add_argument("--steps", type=int, default=200, help="Number of key steps (default: 200)")
     parser.add_argument("--rounds", type=int, default=100, help="Number of rounds (default: 100)")
-    parser.add_argument("--color-by", choices=['waveform', 'bit_diffusion'], default='waveform',
-                        help="Color surface by waveform LSB intensity or bit diffusion")
+    parser.add_argument("--color-by", choices=['waveform', 'diffusion'], default='waveform',
+                        help="Color surface by waveform intensity or diffusion")
     parser.add_argument("--save", type=str, help="Save plot to file (PNG, JPG, etc.)")
     parser.add_argument("--interactive", action="store_true", help="Enable interactive mode")
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
@@ -144,10 +139,10 @@ def main():
         if args.key_start >= args.key_end:
             raise ValueError("key-start must be less than key-end")
 
-        keys, values_matrix, waveform_matrix, bit_diffusion_matrix = generate_surface_data(
+        keys, values_matrix, waveform_matrix, diffusion_matrix = generate_surface_data(
             args.block, args.key_start, args.key_end, args.steps, args.rounds)
 
-        plot_surface(keys, values_matrix, waveform_matrix, bit_diffusion_matrix,
+        plot_surface(keys, values_matrix, waveform_matrix, diffusion_matrix,
                      args.rounds, color_by=args.color_by, save_path=args.save, interactive=args.interactive)
 
     except Exception as e:
@@ -155,3 +150,4 @@ def main():
         print(f"Error: {e}")
 
 if __name__ == "__main__":
+    main()
