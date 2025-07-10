@@ -5,7 +5,7 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.widgets import Slider
-from cipher import signal_spiral_encrypt  # must be float-compatible cipher
+from main import signal_spiral_encrypt  # must be float-compatible cipher
 
 def setup_logging(debug=False):
     level = logging.DEBUG if debug else logging.INFO
