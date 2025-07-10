@@ -1,3 +1,5 @@
+#File: run_tests.sh
+
 #!/bin/bash
 
 echo "Running Collatz Chaos Cipher unit tests..."
