@@ -62,6 +62,7 @@ bash
 #
 #
 “What looks like madness may just be an orbit not yet closed.”
+
 This fractal, generated from a Collatz-like function extended into the complex plane, represents the chaotic seed behind the Collatz Chaos Cipher. Just as the orbit never loops the same way twice, no two encrypted messages echo alike.
 
 ![Collatz Fractal](./assets/collatz-fractal.png)
