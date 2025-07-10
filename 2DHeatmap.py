@@ -6,7 +6,7 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.widgets import Slider
-from cipher import signal_spiral_encrypt
+from cipher import signal_spiral_encrypt, save_history
 
 
 def setup_logging(debug=False):
@@ -146,17 +146,20 @@ def main():
                      xlabel="Round Number",
                      ylabel="Waveform Value (LSB of Block)")
 
-if __name__ == "__main__":
-    main()    plt.tight_layout()
-
-    if save:
-        plt.savefig("bit_diffusion.png")
-        print("Saved bit diffusion visualization to bit_diffusion.png")
-    else:
-        plt.show()
 
 def main():
     parser = argparse.ArgumentParser(description="Collatz Chaos Cipher Heatmap Visualizations")
     parser.add_argument("--block", type=lambda x: int(x, 0), required=True, help="Plaintext block (hex/int)")
     parser.add_argument("--key", type=lambda x: int(x, 0), help="Key (hex/int) for waveform heatmap")
     
+
+if __name__ == "__main__":
+    main()  
+    
+    plt.tight_layout()
+
+    if save_history():
+        plt.savefig("bit_diffusion.png")
+        print("Saved bit diffusion visualization to bit_diffusion.png")
+    else:
+        plt.show()
