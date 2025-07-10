@@ -1,5 +1,7 @@
+#File: lyapunov.py
+
 import numpy as np
-from cipher_core import signal_spiral_encrypt
+from cipher import signal_spiral_encrypt
 
 def lyapunov_exponent(block, key, rounds=100, delta=1e-9):
     _, history1 = signal_spiral_encrypt(block, key, rounds=rounds)
@@ -16,4 +18,4 @@ def lyapunov_exponent(block, key, rounds=100, delta=1e-9):
     print(f"Approximate Lyapunov exponent: {lyapunov:.5f}")
 
 if __name__ == "__main__":
-    lyapunov_exponent(0x112233, 0xDEADBEEFCAFEBABE, rounds=200)
+    lyapunov_exponent(0x112233, 0x4242424242424242, rounds=200)
