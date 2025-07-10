@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from cipher import signal_spiral_encrypt
 
-def visualize_encryption(block, key, rounds=16):
+def visualize_encryption(block, key, rounds=16, save=False):
     ciphertext, history = signal_spiral_encrypt(block, key, rounds=rounds)
 
     values = [h[0] for h in history]
@@ -23,9 +23,14 @@ def visualize_encryption(block, key, rounds=16):
     plt.legend(handles=[blue_patch, red_patch])
 
     plt.tight_layout()
-    plt.show()
+
+    if save:
+        plt.savefig("encryption_visual.png")
+        print("Saved plot as encryption_visual.png")
+    else:
+        plt.show()
 
 if __name__ == "__main__":
     key = 0xDEADBEEFCAFEBABE1234567890ABCDEF
     block = 0x1122334455667788
-    visualize_encryption(block, key)
+    visualize_encryption(block, key, save=False)
