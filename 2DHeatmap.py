@@ -4,7 +4,7 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.widgets import Slider
-from cipher_core import signal_spiral_encrypt
+from visualize_encrypt.pt
 
 def setup_logging(debug=False):
     level = logging.DEBUG if debug else logging.INFO
@@ -65,7 +65,7 @@ def heatmap_multiple_keys(block, key_start, key_end, steps=100, rounds=50, modul
     values_matrix = np.zeros((steps, rounds))
 
     for i, k in enumerate(keys):
-        _, history, _ = signal_spiral_encrypt(block, int(k), rounds=rounds, modulus=modulus)
+        _, history, _ = visualize_encrypt(block, int(k), rounds=rounds, modulus=modulus)
         values_matrix[i, :] = [h[0] for h in history]
 
     plt.figure(figsize=(12, 6))
@@ -123,7 +123,7 @@ def main():
     setup_logging(args.debug)
 
     if args.bit_diffusion:
-        visualize_bit_diffusion(args.block, args.key if args.key else 0xDEADBEEFCAFEBABE, rounds=args.rounds, save=args.save)
+        visualize_bit_diffusion(args.block, args.key if args.key else 0x4242424242424242, rounds=args.rounds, save=args.save)
         return
 
     if args.multi_key:
