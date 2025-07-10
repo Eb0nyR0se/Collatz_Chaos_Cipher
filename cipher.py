@@ -2,7 +2,40 @@ import argparse
 import json
 import logging
 import sys
-from cipher_core import signal_spiral_encrypt, signal_spiral_decrypt
+
+# Helper rol function (rotate left)
+def rol(val, r_bits, max_bits=64):
+    return ((val << r_bits) & (2**max_bits - 1)) | (val >> (max_bits - r_bits))
+
+def signal_spiral_encrypt(block, key, rounds=16, modulus=(2**64 - 59)):
+    b = block
+    subkeys = [(key >> (i * 8)) & 0xFFFFFFFFFFFFFFFF for i in range(rounds)]
+    history = []
+    waveform_data = []
+
+    for i in range(rounds):
+        k = subkeys[i % len(subkeys)]
+        even = (b % 2 == 0)
+        history.append((b, even, k))
+
+        # Capture least significant byte for waveform visualization
+        waveform_data.append(b & 0xFF)
+
+        if even:
+            b = ((b ^ k) >> 1) + k
+        else:
+            b = ((3 * b + k) ^ rol(k, b % 32)) % modulus
+
+    return b, history, waveform_data
+
+def signal_spiral_decrypt(ciphertext, key, history, modulus=(2**64 - 59)):
+    b = ciphertext
+    for original, even, k in reversed(history):
+        if even:
+            b = ((b - k) << 1) ^ k
+        else:
+            b = ((b ^ rol(k, original % 32)) - k) // 3
+    return b
 
 DEFAULT_KEY = 0xDEADBEEFCAFEBABE1234567890ABCDEF
 DEFAULT_BLOCK = 0x1122334455667788
@@ -111,7 +144,7 @@ def main():
 
         # Encrypt
         logging.info(f"Encrypting block=0x{block:X} with key=0x{key:X}")
-        ciphertext, history = signal_spiral_encrypt(block, key, rounds=args.rounds, modulus=args.modulus)
+        ciphertext, history, waveform_data = signal_spiral_encrypt(block, key, rounds=args.rounds, modulus=args.modulus)
         print(f"Encrypted: 0x{ciphertext:X}")
 
         if args.verbose:
@@ -124,7 +157,7 @@ def main():
             print(f"Saved encryption history to {args.save_history}")
 
         if args.export:
-            export_result({"ciphertext": ciphertext, "history": history}, args.export)
+            export_result({"ciphertext": ciphertext, "history": history, "waveform": waveform_data}, args.export)
             print(f"Exported result JSON to {args.export}")
 
         if args.output:
