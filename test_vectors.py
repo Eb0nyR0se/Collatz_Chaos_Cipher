@@ -1,10 +1,12 @@
+#File: test_vectors.py
+
 from cipher import signal_spiral_encrypt, signal_spiral_decrypt
 
 def run_test_vectors():
     test_cases = [
         {
             "plaintext": 0x1122334455667788,
-            "key": 0xDEADBEEFCAFEBABE1234567890ABCDEF,
+            "key": 0x4242424242424242,
         },
         {
             "plaintext": 0x0000000000000001,
