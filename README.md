@@ -33,7 +33,7 @@ It’s a toy example demonstrating how a Collatz-inspired iterative function can
 #
 ### 🧪 Running Tests
 
-🔧 First-time setup (required once):
+First-time setup (required once):
 
 Make the test script executable by running:
 
