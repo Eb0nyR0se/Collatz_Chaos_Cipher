@@ -1,3 +1,5 @@
+#File: 3DEncryption_surface.py
+
 import argparse
 import logging
 import numpy as np
@@ -14,7 +16,7 @@ import tkinter as tk
 from tkinter import messagebox
 import mplcursors
 
-# -------- Logging --------
+# Logging 
 def setup_logging(debug=False):
     level = logging.DEBUG if debug else logging.INFO
     logging.basicConfig(
@@ -24,7 +26,7 @@ def setup_logging(debug=False):
         level=level,
     )
 
-# -------- Helpers --------
+# Helpers
 def validate_positive_int(value, name):
     if value <= 0:
         raise ValueError(f"{name} must be a positive integer.")
@@ -39,7 +41,7 @@ def entropy(signal):
     hist = hist[hist > 0]
     return -np.sum(hist * np.log2(hist)) if len(hist) > 0 else 0
 
-# -------- Data generation --------
+# Data generation 
 def generate_surface_data(block, key_start, key_end, steps, rounds, quiet=False):
     keys = np.linspace(key_start, key_end, steps)
     values_matrix = np.zeros((steps, rounds))
@@ -60,7 +62,7 @@ def generate_surface_data(block, key_start, key_end, steps, rounds, quiet=False)
 
     return keys, values_matrix, waveform_matrix, diffusion_matrix, entropy_vector
 
-# -------- CSV export --------
+# CSV export 
 def export_stats_csv(keys, diffusion_matrix, waveform_matrix, entropy_vector, filename="stats_export.csv"):
     with open(filename, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
@@ -71,7 +73,7 @@ def export_stats_csv(keys, diffusion_matrix, waveform_matrix, entropy_vector, fi
             writer.writerow([i, key, mean_diff, mean_wave, entropy_vector[i]])
     print(f"Exported stats to {filename}")
 
-# -------- Plotting --------
+# Plotting 
 def plot_surface(
     keys, values_matrix, waveform_matrix, diffusion_matrix, entropy_vector, rounds,
     color_by='waveform', save_path=None, interactive=False, azim=45, elev=30,
@@ -184,7 +186,7 @@ def plot_surface(
 
     return fig, ax
 
-# -------- GUI --------
+# GUI 
 def run_gui():
     def on_plot():
         try:
@@ -260,7 +262,7 @@ def run_gui():
 
     root.mainloop()
 
-# -------- CLI --------
+# CLI 
 def main_cli():
     parser = argparse.ArgumentParser(description="3D Encryption Surface Visualizer")
     subparsers = parser.add_subparsers(dest="command")
