@@ -18,5 +18,33 @@ def phase_space_plot(block, key, rounds=100):
     plt.grid(True)
     plt.show()
 
+def prompt_float(prompt_text, default):
+    while True:
+        try:
+            val = input(f"{prompt_text} [default: {default}]: ").strip()
+            if val == "":
+                return default
+            return float(val)
+        except ValueError:
+            print("Invalid input. Please enter a valid float.")
+
+def prompt_int(prompt_text, default):
+    while True:
+        try:
+            val = input(f"{prompt_text} [default: {default}]: ").strip()
+            if val == "":
+                return default
+            iv = int(val)
+            if iv <= 0:
+                print("Please enter a positive integer.")
+                continue
+            return iv
+        except ValueError:
+            print("Invalid input. Please enter a valid integer.")
+
 if __name__ == "__main__":
-    phase_space_plot(0x1122334455, 0x4242424242424242, rounds=200)
+    block = prompt_float("Enter block (float)", 0x1122334455)
+    key = prompt_float("Enter key (float)", 0x4242424242424242)
+    rounds = prompt_int("Enter number of rounds", 200)
+
+    phase_space_plot(block, key, rounds)
