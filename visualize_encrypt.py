@@ -1,4 +1,8 @@
-import argparse import matplotlib.pyplot as plt import logging import csv from cipher import signal_spiral_encrypt, rol
+import argparse 
+import matplotlib.pyplot as plt 
+import logging 
+import csv from cipher 
+import signal_spiral_encrypt, rol
 
 def hamming_distance(a, b): """Compute the Hamming distance between two integers.""" return bin(a ^ b).count('1')
 
