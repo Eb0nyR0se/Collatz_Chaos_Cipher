@@ -20,5 +20,38 @@ def bifurcation_diagram(block, key_start, key_end, steps=200, rounds=30):
     plt.grid(True)
     plt.show()
 
+def prompt_float(prompt_text, default):
+    while True:
+        try:
+            val = input(f"{prompt_text} [default: {default}]: ").strip()
+            if val == "":
+                return default
+            return float(val)
+        except ValueError:
+            print("Invalid input. Please enter a valid float.")
+
+def prompt_int(prompt_text, default):
+    while True:
+        try:
+            val = input(f"{prompt_text} [default: {default}]: ").strip()
+            if val == "":
+                return default
+            iv = int(val)
+            if iv <= 0:
+                print("Please enter a positive integer.")
+                continue
+            return iv
+        except ValueError:
+            print("Invalid input. Please enter a valid integer.")
+
 if __name__ == "__main__":
-    bifurcation_diagram(0x112233, 1_000_000.0, 10_000_000.0, steps=1000, rounds=50)
+    block = prompt_float("Enter block (as float)", 0x112233)
+    key_start = prompt_float("Enter start key range", 1_000_000.0)
+    key_end = prompt_float("Enter end key range", 10_000_000.0)
+    steps = prompt_int("Enter number of steps", 1000)
+    rounds = prompt_int("Enter number of rounds", 50)
+
+    if key_start >= key_end:
+        print("Error: key_start must be less than key_end.")
+    else:
+        bifurcation_diagram(block, key_start, key_end, steps, rounds)
