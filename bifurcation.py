@@ -1,7 +1,8 @@
+#File: bifurcation.py
+
 import matplotlib.pyplot as plt
 import numpy as np
-from cipher_core 
-import signal_spiral_encrypt
+from cipher import signal_spiral_encrypt
 
 def bifurcation_diagram(block, key_start, key_end, steps=200, rounds=30):
     keys = np.linspace(key_start, key_end, steps, dtype=np.uint64)
