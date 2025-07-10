@@ -21,14 +21,12 @@ Open a pull request describing your changes and link any related issues.
 6. **Code Review:**  
 Respond to feedback and make improvements if requested.
 #
-#
 ## Guidelines
 #
 - Ensure your code adheres to the existing style and formatting.
 - Include tests where applicable.
 - Keep changes focused and concise.
 - Be respectful and professional in all communications.
-#
 #
 ## Licensing
 
