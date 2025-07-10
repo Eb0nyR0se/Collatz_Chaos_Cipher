@@ -47,8 +47,8 @@ def signal_spiral_decrypt(ciphertext, _key, history):
 
     return b
 
-DEFAULT_KEY = 0x4242424242424242
-DEFAULT_BLOCK = 0x1122334455667788
+default_key = 0x4242424242424242
+default_block = 0x1122334455667788
 
 def setup_logging(debug=False):
     level = logging.DEBUG if debug else logging.INFO
