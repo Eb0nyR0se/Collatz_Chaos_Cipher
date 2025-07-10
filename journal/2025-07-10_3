@@ -1,55 +1,53 @@
 Journal Entry - 07/10/2025
-#
-#
+
+
 Key Changes:
-#
+
 1. Floating-Point Arithmetic
 - The `block` and `key` inputs are converted to `float` rather than integers.
 - Arithmetic operations apply fractional calculations, mimicking a continuous Collatz-like dynamical system.
-#
+
 2. Fractional Part Heuristic
 - Encryption determines "even" or "odd" state based on the fractional part of the current block value (`frac < 0.5` means "even").
 - This heuristic replaces the classic integer parity test with a smooth threshold on the fractional component.
-#
+
 3. Encryption Function (`signal_spiral_encrypt`)
 - Updates block value each round via two reversible floating-point formulas:
   - **Even case:** `b = (b / 2.0) + k`
   - **Odd case:** `b = (3 * b + k) / 2.0`
 - Records full history of `(block_value, even_flag, key)` at each round for precise reversal.
 - Captures waveform data (scaled fractional parts) for potential visualization.
-#
+
 4. Decryption Function (`signal_spiral_decrypt`)
 - Uses the saved history to perfectly invert the encryption steps, recovering the original plaintext float.
 - The inverse transforms are exact algebraic reversals of the encrypt steps.
-#
+
 5. History Persistence
 - Encryption history is serialized to JSON with floats converted to strings to ensure precision is preserved.
 - History can be saved to and loaded from files to enable decryption in separate sessions.
-#
+
 6. CLI Interface Enhancements
 - The command-line interface supports both encryption and decryption with flexible input:
   - Accepts floats directly or reads from files.
   - Validates non-negative float inputs.
   - Supports saving/loading history and exporting JSON results.
   - Provides verbose round-by-round logs and debugging options.
-#
-#
+
+
 Benefits and Implications
 - **Increased entropy and complexity:** By using floats and fractional behavior, the cipher leverages chaotic continuous dynamics instead of discrete integer steps.
 - **Reversible and auditable:** The saved history ensures every encryption step can be precisely reversed, making this a symmetric cipher suitable for experimentation and research.
 - **Flexible tooling:** The CLI allows batch processing and integration into larger workflows.
 - **Visualization-ready:** Waveform data capture facilitates graphical analysis of encryption dynamics.
-#
-#
+
+
 Future Work
 - Explore parameter tuning for fractional thresholds to enhance security.
 - Integrate with visualization scripts to map chaotic trajectories.
 - Benchmark floating-point precision impacts and ensure consistent cross-platform behavior.
 - Extend to variable precision or fixed-point arithmetic if needed.
 
-#
-#
 This update marks a significant step toward a more advanced, chaos-inspired cipher design with potential applications in cryptography research and educational demonstrations.
-#
-#
+
+
 End of journal entry.
