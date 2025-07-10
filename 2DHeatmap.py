@@ -1,8 +1,17 @@
 import argparse
+import json
+import logging
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.widgets import Slider
 from cipher_core import signal_spiral_encrypt
+
+def setup_logging(debug=False):
+    level = logging.DEBUG if debug else logging.INFO
+    logging.basicConfig(
+        format='%(asctime)s %(levelname)s: %(message)s',
+        level=level,
+    )
 
 def generate_waveform_heatmap(block, key, rounds=100, modulus=(2**64 - 59)):
     """Generate heatmap data from waveform LSB per round for a single block/key."""
@@ -68,32 +77,83 @@ def heatmap_multiple_keys(block, key_start, key_end, steps=100, rounds=50, modul
     plt.tight_layout()
     plt.show()
 
+def block_to_bits(block, bit_width=64):
+    """Convert integer block to list of bits (MSB first)."""
+    return [(block >> i) & 1 for i in reversed(range(bit_width))]
+
+def visualize_bit_diffusion(block, key, rounds=16, modulus=(2**64 - 59), save=False):
+    """Visualize bit-level diffusion over rounds as a heatmap."""
+    _, history, _ = signal_spiral_encrypt(block, key, rounds=rounds, modulus=modulus)
+
+    bit_matrix = []
+    for state, _, _ in history:
+        bits = block_to_bits(state)
+        bit_matrix.append(bits)
+
+    bit_matrix = np.array(bit_matrix)
+
+    plt.figure(figsize=(12, 6))
+    plt.title("Bit-Level Diffusion Over Encryption Rounds")
+    plt.xlabel("Bit Position (MSB to LSB)")
+    plt.ylabel("Round")
+    plt.imshow(bit_matrix, cmap='Greys', interpolation='nearest', aspect='auto', origin='upper')
+    plt.colorbar(label='Bit Value')
+    plt.tight_layout()
+
+    if save:
+        plt.savefig("bit_diffusion.png")
+        print("Saved bit diffusion visualization to bit_diffusion.png")
+    else:
+        plt.show()
+
 def main():
     parser = argparse.ArgumentParser(description="Collatz Chaos Cipher Heatmap Visualizations")
-    parser.add_argument("--block", type=lambda x: int(x, 0), required=True, help="Plaintext block (hex)")
-    parser.add_argument("--key", type=lambda x: int(x, 0), help="Key (hex) for waveform heatmap")
+    parser.add_argument("--block", type=lambda x: int(x, 0), required=True, help="Plaintext block (hex/int)")
+    parser.add_argument("--key", type=lambda x: int(x, 0), help="Key (hex/int) for waveform heatmap")
     parser.add_argument("--rounds", type=int, default=100, help="Number of rounds")
     parser.add_argument("--interactive", action="store_true", help="Interactive slider for rounds (waveform heatmap)")
     parser.add_argument("--multi-key", action="store_true", help="Generate heatmap across multiple keys")
     parser.add_argument("--key-start", type=lambda x: int(x, 0), default=100_000, help="Start key (hex/int) for multi-key heatmap")
     parser.add_argument("--key-end", type=lambda x: int(x, 0), default=1_000_000, help="End key (hex/int) for multi-key heatmap")
+    parser.add_argument("--bit-diffusion", action="store_true", help="Visualize bit-level diffusion heatmap")
+    parser.add_argument("--save", action="store_true", help="Save visualizations as PNG files instead of showing")
+    parser.add_argument("--debug", action="store_true", help="Enable debug logging")
 
     args = parser.parse_args()
+    setup_logging(args.debug)
+
+    if args.bit_diffusion:
+        visualize_bit_diffusion(args.block, args.key if args.key else 0xDEADBEEFCAFEBABE, rounds=args.rounds, save=args.save)
+        return
 
     if args.multi_key:
         heatmap_multiple_keys(args.block, args.key_start, args.key_end, steps=100, rounds=args.rounds)
+        return
+
+    if args.key is None:
+        print("Error: --key is required for waveform heatmap visualization unless --multi-key or --bit-diffusion is used.")
+        return
+
+    if args.interactive:
+        interactive_waveform_heatmap(args.block, args.key, max_rounds=args.rounds)
     else:
-        if args.key is None:
-            print("Error: --key required for waveform heatmap visualization")
-            return
-        if args.interactive:
-            interactive_waveform_heatmap(args.block, args.key, max_rounds=args.rounds)
-        else:
-            heatmap = generate_waveform_heatmap(args.block, args.key, rounds=args.rounds)
-            plot_heatmap(heatmap,
-                         title="Collatz Chaos Cipher Waveform Heatmap",
-                         xlabel="Round Number",
-                         ylabel="Waveform Value (LSB of Block)")
+        heatmap = generate_waveform_heatmap(args.block, args.key, rounds=args.rounds)
+        plot_heatmap(heatmap,
+                     title="Collatz Chaos Cipher Waveform Heatmap",
+                     xlabel="Round Number",
+                     ylabel="Waveform Value (LSB of Block)")
 
 if __name__ == "__main__":
-    main()
+    main()    plt.tight_layout()
+
+    if save:
+        plt.savefig("bit_diffusion.png")
+        print("Saved bit diffusion visualization to bit_diffusion.png")
+    else:
+        plt.show()
+
+def main():
+    parser = argparse.ArgumentParser(description="Collatz Chaos Cipher Heatmap Visualizations")
+    parser.add_argument("--block", type=lambda x: int(x, 0), required=True, help="Plaintext block (hex/int)")
+    parser.add_argument("--key", type=lambda x: int(x, 0), help="Key (hex/int) for waveform heatmap")
+    
