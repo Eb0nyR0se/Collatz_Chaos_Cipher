@@ -1,6 +1,6 @@
 # File: test_vectors.py
 
-from cipher import signal_spiral_encrypt, signal_spiral_decrypt
+from main import signal_spiral_encrypt, signal_spiral_decrypt
 
 def run_test_vectors():
     test_cases = [
