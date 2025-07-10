@@ -1,6 +1,6 @@
 # 🌀 Collatz Chaos Cipher
 
-Welcome to the **Collatz Chaos Cipher**, a curiosity-driven encryption experiment inspired by the Collatz Conjecture that explores the blending of mathematics, chaos theory, and signal processing. This project implements a reversible block cipher inspired by the famous 3x+1 Collatz function, extended with signal spiral dynamics.
+Welcome to the **Collatz Chaos Cipher**, a curiosity-driven encryption experiment inspired by the Collatz Conjecture, which explores the intersection of mathematics, chaos theory, and signal processing. This project implements a reversible block cipher inspired by the famous 3x+1 Collatz function, extended with signal spiral dynamics.
 
 Unlike conventional ciphers, this one leverages chaotic iteration and non-linear key transformations to produce unpredictable, avalanche-prone encrypted outputs. Alongside the core algorithm, the repository includes visualization tools to animate bit diffusion and waveform transformations during encryption rounds.
 
@@ -42,7 +42,7 @@ bash
 cd path/to/collatz_chaos_cipher
 chmod +x run_tests.sh
 #
-After that, to execute all tests in one step, you can simply run:
+After that, to execute all tests in one step, you can run:
 
 bash
 
@@ -61,7 +61,7 @@ bash
 ./run_tests.sh
 #
 #
-[Collatz Fractal](./collatz-fractal.png)
+(./collatz-fractal.png)
 
 “What looks like madness may just be an orbit not yet closed.”
 This fractal, generated from a Collatz-like function extended into the complex plane, represents the chaotic seed behind the Collatz Chaos Cipher. Just as the orbit never loops the same way twice, no two encrypted messages echo alike.
