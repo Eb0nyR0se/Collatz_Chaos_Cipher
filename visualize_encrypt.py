@@ -1,4 +1,4 @@
-# File: cipher.py
+# File: visualize_encrypt.py
 
 import argparse
 import logging
@@ -80,11 +80,19 @@ def visualize_encryption(block, key, rounds=16, save=False, filename="encryption
         print(f"Error: {e}")
 
 
+def parse_block_or_key(value: str) -> float:
+    """Parse input that may be float or hex string."""
+    value = value.strip().lower()
+    return float.fromhex(value) if value.startswith("0x") else float(value)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Visualize Collatz Chaos Cipher encryption")
-    parser.add_argument("--block", type=str, help="Plaintext block (float or hex)")
-    parser.add_argument("--key", type=str, help="Key (float or hex)")
-    parser.add_argument("--rounds", type=int, default=16, help="Number of rounds")
+    parser.add_argument("--block", type=parse_block_or_key, default="12345.6789",
+                        help="Plaintext block (float or hex, default: 12345.6789)")
+    parser.add_argument("--key", type=parse_block_or_key, default="98765.4321",
+                        help="Key (float or hex, default: 98765.4321)")
+    parser.add_argument("--rounds", type=int, default=16, help="Number of rounds (default: 16)")
     parser.add_argument("--save", action="store_true", help="Save visualization as PNG")
     parser.add_argument("--filename", type=str, default="encryption_visual.png", help="Output image filename")
     parser.add_argument("--color-even", type=str, default="blue", help="Color for even rounds")
@@ -96,16 +104,9 @@ def main():
 
     args = parser.parse_args()
 
-    # Fallback to manual input if missing
-    block = args.block or input("Enter plaintext block (hex or float): ")
-    key = args.key or input("Enter key (hex or float): ")
-
-    # Convert hex if needed
-    block = float.fromhex(block) if block.lower().startswith("0x") else float(block)
-    key = float.fromhex(key) if key.lower().startswith("0x") else float(key)
-
     visualize_encryption(
-        block, key,
+        block=args.block,
+        key=args.key,
         rounds=args.rounds,
         save=args.save,
         filename=args.filename,
