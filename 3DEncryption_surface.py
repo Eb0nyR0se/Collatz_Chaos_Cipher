@@ -5,6 +5,7 @@ import logging
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+import matplotlib.colors as colors
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 from main import signal_spiral_encrypt  # Make sure this imports your float-based cipher
 
@@ -94,6 +95,7 @@ def plot_surface(keys, values_matrix, waveform_matrix, diffusion_matrix,
     fig = plt.figure(figsize=(12, 8))
     ax = fig.add_subplot(111, projection='3d')
 
+    # Plot surface with facecolors mapped by w values
     ax.plot_surface(x, y, z, facecolors=cmap(w), linewidth=0, antialiased=False)
 
     ax.set_xlabel('Round')
@@ -101,9 +103,11 @@ def plot_surface(keys, values_matrix, waveform_matrix, diffusion_matrix,
     ax.set_zlabel('Block Value')
     ax.set_title(f'3D Surface Plot of Block Values Over Rounds and Keys\n(Color = {label})')
 
-    m = cm.ScalarMappable(cmap=cmap)
+    # Normalize w for ScalarMappable and add colorbar with ax specified
+    norm = colors.Normalize(vmin=np.min(w), vmax=np.max(w))
+    m = cm.ScalarMappable(norm=norm, cmap=cmap)
     m.set_array(w)
-    fig.colorbar(m, shrink=0.5, aspect=10, label=label)
+    fig.colorbar(m, ax=ax, shrink=0.5, aspect=10, label=label)
 
     if interactive:
         plt.ion()
@@ -116,6 +120,8 @@ def plot_surface(keys, values_matrix, waveform_matrix, diffusion_matrix,
         print(f"Saved plot to {save_path}")
     else:
         plt.show()
+
+
 def main():
     parser = argparse.ArgumentParser(description="3D Encryption Surface Visualization for Float Collatz Chaos Cipher")
     parser.add_argument("--block", type=float, default=12345.6789,
