@@ -1,10 +1,12 @@
+# File: 2DHeatmap.py
+
 import argparse
 import json
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
-import visualize_encrypt
 from matplotlib.widgets import Slider
+from cipher import signal_spiral_encrypt
 
 
 def setup_logging(debug=False):
@@ -16,7 +18,7 @@ def setup_logging(debug=False):
 
 def generate_waveform_heatmap(block, key, rounds=100, modulus=(2**64 - 59)):
     """Generate heatmap data from waveform LSB per round for a single block/key."""
-    _, history, waveform = visualize_encrypt(block, key, rounds=rounds, modulus=modulus)
+    _, history, waveform = signal_spiral_encrypt(block, key, rounds=rounds, modulus=modulus)
     max_wave = max(waveform) if waveform else 255
     heatmap = np.zeros((max_wave + 1, rounds))
 
@@ -66,7 +68,7 @@ def heatmap_multiple_keys(block, key_start, key_end, steps=100, rounds=50, modul
     values_matrix = np.zeros((steps, rounds))
 
     for i, k in enumerate(keys):
-        _, history, _ = visualize_encrypt(block, int(k), rounds=rounds, modulus=modulus)
+        _, history, _ = signal_spiral_encrypt(block, int(k), rounds=rounds, modulus=modulus)
         values_matrix[i, :] = [h[0] for h in history]
 
     plt.figure(figsize=(12, 6))
@@ -84,7 +86,7 @@ def block_to_bits(block, bit_width=64):
 
 def visualize_bit_diffusion(block, key, rounds=16, modulus=(2**64 - 59), save=False):
     """Visualize bit-level diffusion over rounds as a heatmap."""
-    _, history, _ = visualize_encrypt(block, key, rounds=rounds, modulus=modulus)
+    _, history, _ = signal_spiral_encrypt(block, key, rounds=rounds, modulus=modulus)
 
     bit_matrix = []
     for state, _, _ in history:
