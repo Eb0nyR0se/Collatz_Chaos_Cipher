@@ -1,40 +1,50 @@
+# File: cipher.py
+
 import argparse
 import json
 import logging
-import sys
+import math
 
-# Helper rol function (rotate left)
-def rol(val, r_bits, max_bits=64):
-    return ((val << r_bits) & (2**max_bits - 1)) | (val >> (max_bits - r_bits))
+def fractional_part(x):
+    return x - math.floor(x)
 
-def signal_spiral_encrypt(block, key, rounds=16, modulus=(2**64 - 59)):
-    b = block
-    subkeys = [(key >> (i * 8)) & 0xFFFFFFFFFFFFFFFF for i in range(rounds)]
+def signal_spiral_encrypt(block, key, rounds=16):
+    b = float(block)
+    k = float(key)
     history = []
     waveform_data = []
 
     for i in range(rounds):
-        k = subkeys[i % len(subkeys)]
-        even = (b % 2 == 0)
-        history.append((b, even, k))
+        frac = fractional_part(b)
+        # Define "even" as fractional part < 0.5 (heuristic)
+        even = frac < 0.5
 
-        # Capture least significant byte for waveform visualization
-        waveform_data.append(b & 0xFF)
+        # Record state for history and waveform visualization
+        history.append((b, even, k))
+        waveform_data.append(int(frac * 255))
 
         if even:
-            b = ((b ^ k) >> 1) + k
+            # Non-integer Collatz "even" step with key mixing
+            b = (b / 2.0) + k
         else:
-            b = ((3 * b + k) ^ rol(k, b % 32)) % modulus
+            # Non-integer Collatz "odd" step with key mixing
+            b = (3 * b + k) / 2.0
 
     return b, history, waveform_data
 
-def signal_spiral_decrypt(ciphertext, key, history, modulus=(2**64 - 59)):
-    b = ciphertext
-    for original, even, k in reversed(history):
+def signal_spiral_decrypt(ciphertext, _key, history):
+    b = float(ciphertext)
+    # k = float(_key)  # Not needed, remove this line
+
+    # Reverse through history
+    for original, even, key_val in reversed(history):
         if even:
-            b = ((b - k) << 1) ^ k
+            # Inverse of encryption "even" step
+            b = 2 * (b - key_val)
         else:
-            b = ((b ^ rol(k, original % 32)) - k) // 3
+            # Inverse of encryption "odd" step
+            b = (2 * b - key_val) / 3
+
     return b
 
 DEFAULT_KEY = 0x4242424242424242
@@ -51,101 +61,94 @@ def setup_logging(debug=False):
 
 def save_history(history, path):
     """Save encryption history to JSON file."""
+    # Convert floats to strings for JSON serialization
+    serializable_history = [
+        (str(b), even, str(k)) for b, even, k in history
+    ]
+    json_str = json.dumps(serializable_history)
     with open(path, 'w') as f:
-        json.dump(history, f)
+        f.write(json_str)
 
 def load_history(path):
     """Load encryption history from JSON file."""
-    with open(path, 'r') as f:
-        return json.load(f)
+    raw_history = json.load(open(path, 'r'))
+    # Convert strings back to floats
+    history = [
+        (float(b), even, float(k)) for b, even, k in raw_history
+    ]
+    return history
 
 def export_result(result, path):
     """Export result dictionary to JSON file."""
+    json_str = json.dumps(result, indent=2)
     with open(path, 'w') as f:
-        json.dump(result, f, indent=2)
+        f.write(json_str)
 
 def read_input(source, arg_name):
-    """Read integer input from a file or parse directly."""
+    """Read float input from file or parse directly."""
     try:
-        # Try to open as file
         with open(source, 'r') as f:
             data = f.read().strip()
-        value = int(data, 0)
+        value = float(data)
         logging.debug(f"Read {arg_name} from file '{source}': {value}")
         return value
     except FileNotFoundError:
-        # Not a file, try parse as int directly
         try:
-            value = int(source, 0)
+            value = float(source)
             logging.debug(f"Read {arg_name} from direct input: {value}")
             return value
         except Exception as e:
             logging.error(f"Failed to parse {arg_name}: {e}")
-            raise ValueError(f"Invalid {arg_name} input '{source}'. Must be an integer or file containing integer.")
+            raise ValueError(f"Invalid {arg_name} input '{source}'. Must be a float or file containing a float.")
 
-def validate_positive_int(value, name):
-    if value < 0:
-        raise ValueError(f"{name} must be a non-negative integer.")
+def validate_positive_float(value, name):
+    if value < 0.0:
+        raise ValueError(f"{name} must be a non-negative float.")
 
 def main():
-    """
-    CLI for Collatz Chaos Cipher encryption and decryption.
-    Supports encryption, decryption, file I/O, logging, and export.
-    """
-    parser = argparse.ArgumentParser(description="Collatz Chaos Cipher CLI Tool")
-    parser.add_argument("--block", help="Plaintext block (int or path to file). Default: 0x1122334455667788")
-    parser.add_argument("--ciphertext", help="Ciphertext (int or path to file) to decrypt")
-    parser.add_argument("--key", help="Encryption key (int or path to file). Default: 0xDEADBEEFCAFEBABE1234567890ABCDEF")
+    parser = argparse.ArgumentParser(description="Collatz Chaos Cipher CLI Tool (float version)")
+    parser.add_argument("--block", help="Plaintext block (float or path to file). Default: 12345.6789")
+    parser.add_argument("--ciphertext", help="Ciphertext (float or path to file) to decrypt")
+    parser.add_argument("--key", help="Encryption key (float or path to file). Default: 98765.4321")
     parser.add_argument("--encrypt", action="store_true", help="Perform encryption")
     parser.add_argument("--decrypt", action="store_true", help="Perform decryption")
     parser.add_argument("--rounds", type=int, default=16, help="Number of encryption rounds (default: 16)")
-    parser.add_argument("--modulus", type=lambda x: int(x, 0), default=(2**64 - 59), help="Modulus (default: 2^64 - 59)")
     parser.add_argument("--save-history", type=str, help="Path to save encryption history (JSON)")
     parser.add_argument("--load-history", type=str, help="Path to load encryption history (JSON)")
     parser.add_argument("--verbose", action="store_true", help="Display round-by-round encryption info")
     parser.add_argument("--export", type=str, help="Path to export final result (JSON)")
     parser.add_argument("--output", type=str, help="Write ciphertext or plaintext result to file")
     parser.add_argument("--debug", action="store_true", help="Enable debug logging to cipher.log")
-    parser.add_argument("--test", action="store_true", help="Run unit tests (requires pytest)")
 
     args = parser.parse_args()
     setup_logging(args.debug)
-    logging.info("Started cipher CLI")
+    logging.info("Started float cipher CLI")
 
-    if args.test:
-        import subprocess
-        logging.info("Running unit tests")
-        try:
-            subprocess.run(["pytest", "test_vectors.py"], check=True)
-        except Exception as e:
-            logging.error(f"Unit tests failed: {e}")
-            print(f"Unit tests failed: {e}")
-        return
+    default_block_float = 12345.6789
+    default_key_float = 98765.4321
 
-    # Load key and block/ciphertext with defaults and validation
     try:
-        key = read_input(args.key, "key") if args.key else DEFAULT_KEY
-        validate_positive_int(key, "Key")
+        key = read_input(args.key, "key") if args.key else default_key_float
+        validate_positive_float(key, "Key")
     except ValueError as e:
         print(f"Error: {e}")
         return
 
     if args.encrypt:
         if args.block is None:
-            block = DEFAULT_BLOCK
-            print(f"No --block specified; using default plaintext block: 0x{block:X}")
+            block = default_block_float
+            print(f"No --block specified; using default plaintext block: {block}")
         else:
             try:
                 block = read_input(args.block, "block")
-                validate_positive_int(block, "Block")
+                validate_positive_float(block, "Block")
             except ValueError as e:
                 print(f"Error: {e}")
                 return
 
-        # Encrypt
-        logging.info(f"Encrypting block=0x{block:X} with key=0x{key:X}")
-        ciphertext, history, waveform_data = signal_spiral_encrypt(block, key, rounds=args.rounds, modulus=args.modulus)
-        print(f"Encrypted: 0x{ciphertext:X}")
+        logging.info(f"Encrypting block={block} with key={key}")
+        ciphertext, history, waveform_data = signal_spiral_encrypt(block, key, rounds=args.rounds)
+        print(f"Encrypted: {ciphertext}")
 
         if args.verbose:
             for i, (b, even, k) in enumerate(history):
@@ -172,7 +175,7 @@ def main():
 
         try:
             ciphertext = read_input(args.ciphertext, "ciphertext")
-            validate_positive_int(ciphertext, "Ciphertext")
+            validate_positive_float(ciphertext, "Ciphertext")
         except ValueError as e:
             print(f"Error: {e}")
             return
@@ -183,9 +186,9 @@ def main():
             print(f"Error loading history file: {e}")
             return
 
-        logging.info(f"Decrypting ciphertext=0x{ciphertext:X} with key=0x{key:X}")
-        plaintext = signal_spiral_decrypt(ciphertext, key, history, modulus=args.modulus)
-        print(f"Decrypted: 0x{plaintext:X}")
+        logging.info(f"Decrypting ciphertext={ciphertext} with key={key}")
+        plaintext = signal_spiral_decrypt(ciphertext, key, history)
+        print(f"Decrypted: {plaintext}")
 
         if args.export:
             export_result({"plaintext": plaintext}, args.export)
