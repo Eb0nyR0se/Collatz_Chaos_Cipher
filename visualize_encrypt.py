@@ -41,23 +41,20 @@ def visualize_encryption(block, key, rounds=16, save=False, filename="encryption
         ax1.grid(True)
         ax1.plot(steps, values, '-o', color='gray', alpha=0.5)
         for x, y, c in zip(steps, values, colors):
+
             ax1.scatter(x, y, color=c, s=100)
-        ax1.legend(handles=[
-            plt.Line2D([0], [0], marker='o', color='w', label='Even', markerfacecolor=color_even, markersize=10),
-            plt.Line2D([0], [0], marker='o', color='w', label='Odd', markerfacecolor=color_odd, markersize=10)
-        ])
+            ax2.set_title("Waveform Visualization (LSB of block values)")
+            ax2.set_xlabel("Round")
+            ax2.set_ylabel("LSB Value")
+            ax2.grid(True)
+            ax2.plot(steps, waveform_data, marker='o', color=color_waveform)
 
-        ax2.set_title("Waveform Visualization (LSB of block values)")
-        ax2.set_xlabel("Round")
-        ax2.set_ylabel("LSB Value")
-        ax2.grid(True)
-        ax2.plot(steps, waveform_data, marker='o', color=color_waveform)
-
-        ax3.set_title("Bit-Level Diffusion (Hamming Distance Between Rounds)")
-        ax3.set_xlabel("Round")
-        ax3.set_ylabel("Bit Difference")
-        ax3.grid(True)
-        ax3.plot(steps, bit_diffs, marker='o', color='orange')
+            ax3.set_title("Bit-Level Diffusion (Hamming Distance Between Rounds)")
+            ax3.set_xlabel("Round")
+            ax3.set_ylabel("Bit Difference")
+            ax3.grid(True)
+            ax3.plot(steps, bit_diffs, marker='o', color='orange')
+            
 
         if save:
             plt.savefig(filename)
