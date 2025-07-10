@@ -61,7 +61,7 @@ bash
 ./run_tests.sh
 #
 #
-(./collatz-fractal.png)
+<img src="data:image/png;base64,PUT-YOUR-BASE64-STRING-HERE" width="400" alt="Collatz Fractal" />
 
 “What looks like madness may just be an orbit not yet closed.”
 This fractal, generated from a Collatz-like function extended into the complex plane, represents the chaotic seed behind the Collatz Chaos Cipher. Just as the orbit never loops the same way twice, no two encrypted messages echo alike.
