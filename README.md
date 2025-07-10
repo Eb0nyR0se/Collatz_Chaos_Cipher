@@ -66,7 +66,7 @@ bash
 
 This fractal, generated from a Collatz-like function extended into the complex plane, represents the chaotic seed behind the Collatz Chaos Cipher. 
 
-![Collatz Fractal](./images/collatz_fractal.png)
+![Collatz Fractal](./assets/images/collatz_fractal.png)
 #
 #
 Explore the chaos. Encrypt with curves. Challenge convention.
