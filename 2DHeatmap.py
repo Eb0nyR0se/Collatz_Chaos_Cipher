@@ -1,4 +1,4 @@
-# File: 2DHeatmap.py
+#File: 2DHeatmap.py
 
 import argparse
 import logging
@@ -7,9 +7,11 @@ import numpy as np
 from matplotlib.widgets import Slider
 from main import signal_spiral_encrypt  # must be float-compatible cipher
 
+
 def setup_logging(debug=False):
     level = logging.DEBUG if debug else logging.INFO
     logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=level)
+
 
 def generate_waveform_heatmap(block, key, rounds=100):
     """Generate heatmap data from waveform LSB per round for a single block/key."""
@@ -25,6 +27,7 @@ def generate_waveform_heatmap(block, key, rounds=100):
 
     return heat
 
+
 def plot_heatmap(heat, title, xlabel, ylabel, cmap='inferno'):
     fig, ax = plt.subplots(figsize=(12, 6))
     cax = ax.imshow(heat, aspect='auto', cmap=cmap, origin='lower')
@@ -34,6 +37,7 @@ def plot_heatmap(heat, title, xlabel, ylabel, cmap='inferno'):
     fig.colorbar(cax, ax=ax, label="Frequency")
     plt.tight_layout()
     plt.show()
+
 
 def interactive_waveform_heatmap(block, key, max_rounds=100):
     rounds = max_rounds
@@ -67,6 +71,7 @@ def interactive_waveform_heatmap(block, key, max_rounds=100):
     slider_rounds.on_changed(update)
     plt.show()
 
+
 def heatmap_multiple_keys(block, key_start, key_end, steps=100, rounds=50):
     def extract_float(val):
         if isinstance(val, (tuple, list)):
@@ -93,11 +98,13 @@ def heatmap_multiple_keys(block, key_start, key_end, steps=100, rounds=50):
     plt.tight_layout()
     plt.show()
 
+
 def block_to_bits(block, bit_width=64):
     """Convert integer block to list of bits (MSB first). Works only if block is int."""
     if not isinstance(block, int):
         raise TypeError("block_to_bits only supports integer blocks.")
     return [(block >> i) & 1 for i in reversed(range(bit_width))]
+
 
 def visualize_bit_diffusion(block, key, rounds=16, save=False):
     """Visualize bit-level diffusion over rounds as a heatmap."""
@@ -129,9 +136,10 @@ def visualize_bit_diffusion(block, key, rounds=16, save=False):
     else:
         plt.show()
 
+
 def main():
     parser = argparse.ArgumentParser(description="Collatz Chaos Cipher Heatmap Visualizations")
-    parser.add_argument("--block", type=float, required=True, help="Plaintext block (float)")
+    parser.add_argument("--block", type=float, help="Plaintext block (float)")
     parser.add_argument("--key", type=float, help="Key (float) for waveform heatmap")
     parser.add_argument("--rounds", type=int, default=100, help="Number of rounds")
     parser.add_argument("--interactive", action="store_true", help="Interactive slider for rounds (waveform heatmap)")
@@ -145,16 +153,31 @@ def main():
     args = parser.parse_args()
     setup_logging(args.debug)
 
+    # Interactive inputs if missing args
+    if args.block is None:
+        while True:
+            b_str = input("Enter plaintext block (float): ").strip()
+            try:
+                args.block = float(b_str)
+                break
+            except ValueError:
+                print("Invalid input, please enter a float.")
+
+    if args.key is None and not args.multi_key and not args.bit_diffusion:
+        while True:
+            k_str = input("Enter key (float): ").strip()
+            try:
+                args.key = float(k_str)
+                break
+            except ValueError:
+                print("Invalid input, please enter a float.")
+
     if args.bit_diffusion:
-        visualize_bit_diffusion(args.block, int(args.key) if args.key else 0x4242424242424242, rounds=args.rounds, save=args.save)
+        visualize_bit_diffusion(int(args.block), int(args.key) if args.key else 0x4242424242424242, rounds=args.rounds, save=args.save)
         return
 
     if args.multi_key:
         heatmap_multiple_keys(args.block, args.key_start, args.key_end, steps=100, rounds=args.rounds)
-        return
-
-    if args.key is None:
-        print("Error: --key is required unless using --multi-key or --bit-diffusion.")
         return
 
     if args.interactive:
