@@ -1,10 +1,12 @@
+# File: 3DEncryption_surface.py
+
 import argparse
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 from matplotlib import cm
-import visualize_encrypt  # Adjust import path as needed
+from cipher import signal_spiral_encrypt  # Adjust import path as needed
 
 def setup_logging(debug=False):
     """Configure logging."""
@@ -41,7 +43,7 @@ def generate_surface_data(block, key_start, key_end, steps, rounds):
     bit_diffusion_matrix = np.zeros((steps, rounds))
 
     for i, k in enumerate(keys):
-        ciphertext, history, waveform = visualize_encrypt(block, int(k), rounds=rounds)
+        ciphertext, history, waveform = signal_spiral_encrypt(block, int(k), rounds=rounds)
         block_values = [h[0] for h in history]
         values_matrix[i, :] = block_values
         waveform_matrix[i, :] = waveform
