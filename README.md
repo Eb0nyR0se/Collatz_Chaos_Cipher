@@ -38,23 +38,27 @@ First-time setup (required once):
 Make the test script executable by running:
 
 bash
+
 cd path/to/collatz_chaos_cipher
 chmod +x run_tests.sh
 
 After that, you can simply run:
 
 bash
+
 ./run_tests.sh
 to execute all tests in one step.
 #
 To verify the correctness of the cipher, automated unit tests are included. Run them from the project root directory using:
 
 bash
+
 python -m unittest test_vectors.py
 
 Or use the provided test runner script:
 
 bash
+
 ./run_tests.sh
 #
 #
