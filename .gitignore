@@ -43,9 +43,11 @@ coverage.xml
 *.cover
 *.py,cover
 .hypothesis/
+.pytest_cache/
 
-# Jupyter Notebook checkpoints
+# Jupyter Notebook checkpoints and outputs
 .ipynb_checkpoints
+*.nbconvert.ipynb
 
 # PyCharm
 .idea/
@@ -58,8 +60,17 @@ coverage.xml
 
 # MacOS
 .DS_Store
+.AppleDouble
+.LSOverride
 
 # Virtual environments
 venv/
 env/
 ENV/
+
+# Environment variable files
+.env
+
+# Pipenv
+Pipfile.lock
+
