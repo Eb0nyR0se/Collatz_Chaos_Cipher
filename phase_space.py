@@ -3,8 +3,12 @@
 import matplotlib.pyplot as plt
 from main import signal_spiral_encrypt
 
-def phase_space_plot(block, key, rounds=100):
-    ciphertext, history, _ = signal_spiral_encrypt(block, key, rounds=rounds)
+
+def phase_space_plot(init_block, init_key, num_rounds=100):
+    """
+    Generate a phase space plot from the signal_spiral_encrypt history.
+    """
+    ciphertext, history, _ = signal_spiral_encrypt(init_block, init_key, rounds=num_rounds)
     values = [h[0] for h in history]
 
     x = values[:-1]
@@ -18,15 +22,19 @@ def phase_space_plot(block, key, rounds=100):
     plt.grid(True)
     plt.show()
 
+
 def prompt_float(prompt_text, default):
     while True:
         try:
             val = input(f"{prompt_text} [default: {default}]: ").strip()
             if val == "":
-                return default
+                return float(default)
+            if val.lower().startswith("0x"):
+                return float(int(val, 16))
             return float(val)
         except ValueError:
-            print("Invalid input. Please enter a valid float.")
+            print("Invalid input. Please enter a float or hex (e.g., 0x1234).")
+
 
 def prompt_int(prompt_text, default):
     while True:
@@ -42,10 +50,10 @@ def prompt_int(prompt_text, default):
         except ValueError:
             print("Invalid input. Please enter a valid integer.")
 
+
 if __name__ == "__main__":
-    block = prompt_float("Enter block (float)", 0x1122334455)
-    key = prompt_float("Enter key (float)", 0x4242424242424242)
-    rounds = prompt_int("Enter number of rounds", 200)
+    user_block = prompt_float("Enter block (float or hex)", "0x1122334455")
+    user_key = prompt_float("Enter key (float or hex)", "0x4242424242424242")
+    user_rounds = prompt_int("Enter number of rounds", 200)
 
-    phase_space_plot(0x1122334455, 0x4242424242424242, rounds=100)
-
+    phase_space_plot(user_block, user_key, user_rounds)
