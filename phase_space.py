@@ -1,6 +1,7 @@
+#File: phase_space.py
+
 import matplotlib.pyplot as plt
-from cipher_core 
-import signal_spiral_encrypt
+from cipher import signal_spiral_encrypt
 
 def phase_space_plot(block, key, rounds=100):
     ciphertext, history = signal_spiral_encrypt(block, key, rounds=rounds)
@@ -18,4 +19,5 @@ def phase_space_plot(block, key, rounds=100):
     plt.show()
 
 if __name__ == "__main__":
-    phase_space_plot(0x1122334455, 0xDEADBEEFCAFEBABE, rounds=200)
+    phase_space_plot(0x1122334455, 0x4242424242424242, rounds=200)
+
