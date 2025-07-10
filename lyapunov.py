@@ -1,11 +1,11 @@
-#File: lyapunov.py
+# File: lyapunov.py
 
 import numpy as np
 from cipher import signal_spiral_encrypt
 
 def lyapunov_exponent(block, key, rounds=100, delta=1e-9):
-    _, history1 = signal_spiral_encrypt(block, key, rounds=rounds)
-    _, history2 = signal_spiral_encrypt(block + delta, key, rounds=rounds)
+    _, history1, _ = signal_spiral_encrypt(block, key, rounds=rounds)
+    _, history2, _ = signal_spiral_encrypt(block + delta, key, rounds=rounds)
 
     distances = []
     for (b1, _, _), (b2, _, _) in zip(history1, history2):
