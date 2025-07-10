@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 from matplotlib import cm
-from cipher_core import visualize_encrypt  # Adjust import path as needed
+import visualize_encrypt  # Adjust import path as needed
 
 def setup_logging(debug=False):
     """Configure logging."""
@@ -41,7 +41,7 @@ def generate_surface_data(block, key_start, key_end, steps, rounds):
     bit_diffusion_matrix = np.zeros((steps, rounds))
 
     for i, k in enumerate(keys):
-        ciphertext, history, waveform = signal_spiral_encrypt(block, int(k), rounds=rounds)
+        ciphertext, history, waveform = visualize_encrypt(block, int(k), rounds=rounds)
         block_values = [h[0] for h in history]
         values_matrix[i, :] = block_values
         waveform_matrix[i, :] = waveform
