@@ -1,109 +1,207 @@
-#File: visualize_encrypt.py
+# File: cipher.py
 
 import argparse
+import json
 import logging
-import matplotlib.pyplot as plt
-import csv
-from cipher import signal_spiral_encrypt  # Make sure this file/module exists
+import math
 
+def fractional_part(x):
+    return x - math.floor(x)
 
-def hamming_distance(a, b):
-    """Compute the Hamming distance between two integers."""
-    return bin(a ^ b).count('1')
+def signal_spiral_encrypt(block, key, rounds=16):
+    b = float(block)
+    k = float(key)
+    history = []
+    waveform_data = []
 
+    for i in range(rounds):
+        frac = fractional_part(b)
+        # Define "even" as fractional part < 0.5 (heuristic)
+        even = frac < 0.5
 
-def visualize_encryption(block, key, rounds=16, save=False, filename="encryption_visual.png",
-                         color_even='blue', color_odd='red', color_waveform='purple',
-                         verbose=False, export_csv=False, csv_filename="encryption_data.csv"):
-    """Visualize the Collatz Chaos Cipher encryption process with bit diffusion."""
+        # Record state for history and waveform visualization
+        history.append((b, even, k))
+        waveform_data.append(int(frac * 255))
 
-    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO,
-                        format='[%(levelname)s] %(message)s')
-
-    try:
-        if not (isinstance(block, int) and block >= 0):
-            raise ValueError("Block must be a non-negative integer.")
-        if not (isinstance(key, int) and key >= 0):
-            raise ValueError("Key must be a non-negative integer.")
-        if not (isinstance(rounds, int) and rounds > 0):
-            raise ValueError("Rounds must be a positive integer.")
-
-        logging.info(f"Starting encryption visualization with block=0x{block:X}, key=0x{key:X}, rounds={rounds}")
-
-        ciphertext, history, waveform_data = signal_spiral_encrypt(block, key, rounds=rounds)
-
-        values = [h[0] for h in history]
-        colors = [color_even if h[1] else color_odd for h in history]
-        steps = list(range(1, len(values) + 1))
-        bit_diffs = [hamming_distance(values[i], values[i - 1]) if i > 0 else 0 for i in range(len(values))]
-
-        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(12, 12), constrained_layout=True)
-
-        ax1.set_title("Collatz Chaos Cipher: Encryption Path")
-        ax1.set_xlabel("Round")
-        ax1.set_ylabel("Block Value")
-        ax1.grid(True)
-        ax1.plot(steps, values, '-o', color='gray', alpha=0.5)
-        for x, y, c in zip(steps, values, colors):
-            ax1.scatter(x, y, color=c, s=100)
-        ax1.legend(handles=[
-            plt.Line2D([0], [0], marker='o', color='w', label='Even', markerfacecolor=color_even, markersize=10),
-            plt.Line2D([0], [0], marker='o', color='w', label='Odd', markerfacecolor=color_odd, markersize=10)
-        ])
-
-        ax2.set_title("Waveform Visualization (LSB of block values)")
-        ax2.set_xlabel("Round")
-        ax2.set_ylabel("LSB Value")
-        ax2.grid(True)
-        ax2.plot(steps, waveform_data, marker='o', color=color_waveform)
-
-        ax3.set_title("Bit-Level Diffusion (Hamming Distance Between Rounds)")
-        ax3.set_xlabel("Round")
-        ax3.set_ylabel("Bit Difference")
-        ax3.grid(True)
-        ax3.plot(steps, bit_diffs, marker='o', color='orange')
-
-        if save:
-            plt.savefig(filename)
-            logging.info(f"Visualization saved to {filename}")
+        if even:
+            # Non-integer Collatz "even" step with key mixing
+            b = (b / 2.0) + k
         else:
-            plt.show()
+            # Non-integer Collatz "odd" step with key mixing
+            b = (3 * b + k) / 2.0
 
-        if export_csv:
-            with open(csv_filename, "w", newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(["Round", "Block Value", "Waveform LSB", "Hamming Distance"])
-                for i in range(len(values)):
-                    writer.writerow([steps[i], values[i], waveform_data[i], bit_diffs[i]])
-            logging.info(f"CSV data exported to {csv_filename}")
+    return b, history, waveform_data
 
-        logging.info(f"Encryption visualization completed successfully. Ciphertext: 0x{ciphertext:X}")
+def signal_spiral_decrypt(ciphertext, _key, history):
+    b = float(ciphertext)
+    # k = float(_key)  # Not needed, remove this line
 
-    except Exception as e:
-        logging.error(f"Error during visualization: {e}")
-        print(f"Error: {e}")
+    # Reverse through history
+    for original, even, key_val in reversed(history):
+        if even:
+            # Inverse of encryption "even" step
+            b = 2 * (b - key_val)
+        else:
+            # Inverse of encryption "odd" step
+            b = (2 * b - key_val) / 3
 
+    return b
+
+DEFAULT_KEY = 0x4242424242424242
+DEFAULT_BLOCK = 0x1122334455667788
+
+def setup_logging(debug=False):
+    level = logging.DEBUG if debug else logging.INFO
+    logging.basicConfig(
+        filename='cipher.log',
+        filemode='a',
+        format='%(asctime)s %(levelname)s: %(message)s',
+        level=level,
+    )
+
+def save_history(history, path):
+    """Save encryption history to JSON file."""
+    # Convert floats to strings for JSON serialization
+    serializable_history = [
+        (str(b), even, str(k)) for b, even, k in history
+    ]
+    json_str = json.dumps(serializable_history)
+    with open(path, 'w') as f:
+        f.write(json_str)
+
+def load_history(path):
+    """Load encryption history from JSON file."""
+    raw_history = json.load(open(path, 'r'))
+    # Convert strings back to floats
+    history = [
+        (float(b), even, float(k)) for b, even, k in raw_history
+    ]
+    return history
+
+def export_result(result, path):
+    """Export result dictionary to JSON file."""
+    json_str = json.dumps(result, indent=2)
+    with open(path, 'w') as f:
+        f.write(json_str)
+
+def read_input(source, arg_name):
+    """Read float input from file or parse directly."""
+    try:
+        with open(source, 'r') as f:
+            data = f.read().strip()
+        value = float(data)
+        logging.debug(f"Read {arg_name} from file '{source}': {value}")
+        return value
+    except FileNotFoundError:
+        try:
+            value = float(source)
+            logging.debug(f"Read {arg_name} from direct input: {value}")
+            return value
+        except Exception as e:
+            logging.error(f"Failed to parse {arg_name}: {e}")
+            raise ValueError(f"Invalid {arg_name} input '{source}'. Must be a float or file containing a float.")
+
+def validate_positive_float(value, name):
+    if value < 0.0:
+        raise ValueError(f"{name} must be a non-negative float.")
 
 def main():
-    parser = argparse.ArgumentParser(description="Visualize Collatz Chaos Cipher encryption")
-    parser.add_argument("--block", type=lambda x: int(x, 0), required=True, help="Plaintext block (hex)")
-    parser.add_argument("--key", type=lambda x: int(x, 0), required=True, help="Key (hex)")
-    parser.add_argument("--rounds", type=int, default=16, help="Number of rounds")
-    parser.add_argument("--save", action="store_true", help="Save visualization as PNG instead of showing it")
-    parser.add_argument("--filename", type=str, default="encryption_visual.png", help="Filename to save image")
-    parser.add_argument("--color-even", type=str, default="blue", help="Color for even rounds")
-    parser.add_argument("--color-odd", type=str, default="red", help="Color for odd rounds")
-    parser.add_argument("--color-waveform", type=str, default="purple", help="Color for waveform plot")
-    parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
-    parser.add_argument("--export-csv", action="store_true", help="Export block, waveform, and bit-diff to CSV")
-    parser.add_argument("--csv-filename", type=str, default="encryption_data.csv", help="Output CSV filename")
+    parser = argparse.ArgumentParser(description="Collatz Chaos Cipher CLI Tool (float version)")
+    parser.add_argument("--block", help="Plaintext block (float or path to file). Default: 12345.6789")
+    parser.add_argument("--ciphertext", help="Ciphertext (float or path to file) to decrypt")
+    parser.add_argument("--key", help="Encryption key (float or path to file). Default: 98765.4321")
+    parser.add_argument("--encrypt", action="store_true", help="Perform encryption")
+    parser.add_argument("--decrypt", action="store_true", help="Perform decryption")
+    parser.add_argument("--rounds", type=int, default=16, help="Number of encryption rounds (default: 16)")
+    parser.add_argument("--save-history", type=str, help="Path to save encryption history (JSON)")
+    parser.add_argument("--load-history", type=str, help="Path to load encryption history (JSON)")
+    parser.add_argument("--verbose", action="store_true", help="Display round-by-round encryption info")
+    parser.add_argument("--export", type=str, help="Path to export final result (JSON)")
+    parser.add_argument("--output", type=str, help="Write ciphertext or plaintext result to file")
+    parser.add_argument("--debug", action="store_true", help="Enable debug logging to cipher.log")
 
     args = parser.parse_args()
-    visualize_encryption(args.block, args.key, rounds=args.rounds, save=args.save,
-                         filename=args.filename, color_even=args.color_even, color_odd=args.color_odd,
-                         color_waveform=args.color_waveform, verbose=args.verbose,
-                         export_csv=args.export_csv, csv_filename=args.csv_filename)
+    setup_logging(args.debug)
+    logging.info("Started float cipher CLI")
 
+    default_block_float = 12345.6789
+    default_key_float = 98765.4321
+
+    try:
+        key = read_input(args.key, "key") if args.key else default_key_float
+        validate_positive_float(key, "Key")
+    except ValueError as e:
+        print(f"Error: {e}")
+        return
+
+    if args.encrypt:
+        if args.block is None:
+            block = default_block_float
+            print(f"No --block specified; using default plaintext block: {block}")
+        else:
+            try:
+                block = read_input(args.block, "block")
+                validate_positive_float(block, "Block")
+            except ValueError as e:
+                print(f"Error: {e}")
+                return
+
+        logging.info(f"Encrypting block={block} with key={key}")
+        ciphertext, history, waveform_data = signal_spiral_encrypt(block, key, rounds=args.rounds)
+        print(f"Encrypted: {ciphertext}")
+
+        if args.verbose:
+            for i, (b, even, k) in enumerate(history):
+                state = "Even" if even else "Odd"
+                print(f"Round {i+1:02}: b = {b}, state = {state}, key = {k}")
+
+        if args.save_history:
+            save_history(history, args.save_history)
+            print(f"Saved encryption history to {args.save_history}")
+
+        if args.export:
+            export_result({"ciphertext": ciphertext, "history": history, "waveform": waveform_data}, args.export)
+            print(f"Exported result JSON to {args.export}")
+
+        if args.output:
+            with open(args.output, "w") as f:
+                f.write(f"{ciphertext}\n")
+            print(f"Ciphertext written to {args.output}")
+
+    elif args.decrypt:
+        if args.ciphertext is None or args.load_history is None:
+            print("Error: --ciphertext and --load-history are required for decryption.")
+            return
+
+        try:
+            ciphertext = read_input(args.ciphertext, "ciphertext")
+            validate_positive_float(ciphertext, "Ciphertext")
+        except ValueError as e:
+            print(f"Error: {e}")
+            return
+
+        try:
+            history = load_history(args.load_history)
+        except Exception as e:
+            print(f"Error loading history file: {e}")
+            return
+
+        logging.info(f"Decrypting ciphertext={ciphertext} with key={key}")
+        plaintext = signal_spiral_decrypt(ciphertext, key, history)
+        print(f"Decrypted: {plaintext}")
+
+        if args.export:
+            export_result({"plaintext": plaintext}, args.export)
+            print(f"Exported plaintext JSON to {args.export}")
+
+        if args.output:
+            with open(args.output, "w") as f:
+                f.write(f"{plaintext}\n")
+            print(f"Plaintext written to {args.output}")
+
+    else:
+        print("Please specify --encrypt or --decrypt")
+        logging.warning("No operation specified (encrypt or decrypt)")
 
 if __name__ == "__main__":
     main()
