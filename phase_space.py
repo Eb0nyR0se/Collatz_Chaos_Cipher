@@ -1,7 +1,5 @@
 # File: phase_space.py
 
-# File: phase_space.py
-
 import matplotlib.pyplot as plt
 from main import signal_spiral_encrypt
 
@@ -49,5 +47,5 @@ if __name__ == "__main__":
     key = prompt_float("Enter key (float)", 0x4242424242424242)
     rounds = prompt_int("Enter number of rounds", 200)
 
-    phase_space_plot(0x1122334455, 0x4242424242424242, rounds=200)
+    phase_space_plot(0x1122334455, 0x4242424242424242, rounds=100)
 
