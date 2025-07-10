@@ -71,7 +71,9 @@ This fractal, generated from a Collatz-like function extended into the complex p
 #
 Here's a visualization of the non-integer Collatz-like trajectories. 
 
-Each line represents how a different non-integer starting value evolves under the (even: x/2, odd: (3x+1)/2) rule. You can see chaotic decay patterns that hint at sensitive dependence on initial conditions, a hallmark of complex dynamical systems.
+Each line represents how a different non-integer starting value evolves under the (even: x/2, odd: (3x+1)/2) rule. 
+
+You can see chaotic decay patterns that hint at sensitive dependence on initial conditions, a hallmark of complex dynamical systems.
 
 
 ![Non-Integer Collatz-Conjuncture Trajectories](./assets/images/non-integer_collatz-conjecture_trajectories.png)
@@ -82,12 +84,9 @@ Here is a visualization of the Collatz Chaos Cipher in action:
 
 Top Plot: Shows how the block value evolves over 16 rounds of encryption. Blue points represent even rounds, and red points represent odd rounds based on the block parity.
 
-
 Bottom Plot: Displays the least significant byte (LSB) from each round, forming a waveform that captures bit-level transformations.
 
-
 This dual-view helps illustrate the cipher's nonlinear behavior and bit-level diffusion.
-
 
 ![Encryption Path (Block Values Over Rounds)](./assets/images/encryption_path.png)
 #
