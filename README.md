@@ -1,4 +1,4 @@
-🌀 Collatz Chaos Cipher
+🌀 Collatz Chaos Cipher  ![License](https://img.shields.io/badge/license-Custom%20Commercial-blue)
 
 Welcome to the Collatz Chaos Cipher, a curiosity-driven encryption experiment inspired by the Collatz Conjecture that explores the blending of mathematics, chaos theory, and signal processing. This project implements a reversible block cipher inspired by the famous 3x+1 Collatz function, extended to floating-point arithmetic and integrated with signal spiral dynamics.
 #
