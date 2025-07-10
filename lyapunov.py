@@ -17,5 +17,34 @@ def lyapunov_exponent(block, key, rounds=100, delta=1e-9):
     lyapunov = np.mean(np.log(distances / delta))
     print(f"Approximate Lyapunov exponent: {lyapunov:.5f}")
 
+def prompt_float(prompt_text, default):
+    while True:
+        try:
+            val = input(f"{prompt_text} [default: {default}]: ").strip()
+            if val == "":
+                return default
+            return float(val)
+        except ValueError:
+            print("Invalid input. Please enter a valid float.")
+
+def prompt_int(prompt_text, default):
+    while True:
+        try:
+            val = input(f"{prompt_text} [default: {default}]: ").strip()
+            if val == "":
+                return default
+            iv = int(val)
+            if iv <= 0:
+                print("Please enter a positive integer.")
+                continue
+            return iv
+        except ValueError:
+            print("Invalid input. Please enter a valid integer.")
+
 if __name__ == "__main__":
-    lyapunov_exponent(0x112233, 0x4242424242424242, rounds=200)
+    block = prompt_float("Enter block (float)", 0x112233)
+    key = prompt_float("Enter key (float)", 0x4242424242424242)
+    rounds = prompt_int("Enter number of rounds", 200)
+    delta = prompt_float("Enter delta (small float perturbation)", 1e-9)
+
+    lyapunov_exponent(block, key, rounds, delta)
