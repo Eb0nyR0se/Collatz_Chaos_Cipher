@@ -1,7 +1,7 @@
 # File: lyapunov.py
 
 import numpy as np
-from cipher import signal_spiral_encrypt
+from main import signal_spiral_encrypt
 
 def lyapunov_exponent(block, key, rounds=100, delta=1e-9):
     _, history1, _ = signal_spiral_encrypt(block, key, rounds=rounds)
