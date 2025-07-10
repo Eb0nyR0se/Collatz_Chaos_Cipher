@@ -116,22 +116,53 @@ def plot_surface(keys, values_matrix, waveform_matrix, diffusion_matrix,
         print(f"Saved plot to {save_path}")
     else:
         plt.show()
-
 def main():
     parser = argparse.ArgumentParser(description="3D Encryption Surface Visualization for Float Collatz Chaos Cipher")
-    parser.add_argument("--block", type=float, help="Plaintext block (float, default: 12345.6789)")
-    parser.add_argument("--key-start", type=float, help="Start key range (float, default: 100000.0)")
-    parser.add_argument("--key-end", type=float, help="End key range (float, default: 1000000.0)")
-    parser.add_argument("--steps", type=int, help="Number of key steps (default: 200)")
-    parser.add_argument("--rounds", type=int, help="Number of rounds (default: 100)")
+    parser.add_argument("--block", type=float, default=12345.6789,
+                        help="Plaintext block (float, default: 12345.6789)")
+    parser.add_argument("--key-start", type=float, default=100000.0,
+                        help="Start key range (float, default: 100000.0)")
+    parser.add_argument("--key-end", type=float, default=1000000.0,
+                        help="End key range (float, default: 1000000.0)")
+    parser.add_argument("--steps", type=int, default=200,
+                        help="Number of key steps (default: 200)")
+    parser.add_argument("--rounds", type=int, default=100,
+                        help="Number of rounds (default: 100)")
     parser.add_argument("--color-by", choices=['waveform', 'diffusion'], default='waveform',
                         help="Color surface by waveform intensity or diffusion")
-    parser.add_argument("--save", type=str, help="Save plot to file (PNG, JPG, etc.)")
-    parser.add_argument("--interactive", action="store_true", help="Enable interactive mode")
-    parser.add_argument("--debug", action="store_true", help="Enable debug logging")
+    parser.add_argument("--save", type=str,
+                        help="Save plot to file (PNG, JPG, etc.)")
+    parser.add_argument("--interactive", action="store_true",
+                        help="Enable interactive mode")
+    parser.add_argument("--debug", action="store_true",
+                        help="Enable debug logging")
 
     args = parser.parse_args()
     setup_logging(args.debug)
+
+    try:
+        validate_positive_int(args.steps, "Steps")
+        validate_positive_int(args.rounds, "Rounds")
+        if args.key_start >= args.key_end:
+            raise ValueError("key-start must be less than key-end")
+
+        keys, values_matrix, waveform_matrix, diffusion_matrix = generate_surface_data(
+            args.block, args.key_start, args.key_end, args.steps, args.rounds)
+
+        plot_surface(
+            keys,
+            values_matrix,
+            waveform_matrix,
+            diffusion_matrix,
+            args.rounds,
+            color_by=args.color_by,
+            save_path=args.save,
+            interactive=args.interactive
+        )
+
+    except Exception as e:
+        logging.error(f"Error: {e}")
+        print(f"Error: {e}")
 
     # Interactive prompt helpers
     def prompt_float(prompt_text, default):
