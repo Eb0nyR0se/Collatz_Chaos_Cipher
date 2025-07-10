@@ -27,6 +27,7 @@ The Collatz Chaos Cipher blends number theory with dynamic iteration to produce 
 #
 #
 🔬 Intended For:
+
 Cryptographers, theorists, and chaos enthusiasts
 
 Anyone exploring the intersection of math, signals, and encryption
