@@ -4,6 +4,7 @@ import argparse
 import json
 import logging
 import math
+import main
 
 def fractional_part(x):
     return x - math.floor(x)
