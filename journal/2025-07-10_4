@@ -1,0 +1,96 @@
+Journal Entry - 07/10/2025
+
+
+1. Visualization Script (visualize_encrypt_with_lyapunov.py) Updates
+
+Explicit import of Line2D:
+Added from matplotlib.lines import Line2D to properly use Line2D for custom legend markers.
+This resolved IDE and runtime errors related to Line2D not found in pyplot.
+
+Refactored legend handle creation:
+Replaced all plt.Line2D calls with direct Line2D usage for clarity and correctness.
+
+Removed duplicate legend calls:
+Ensured only one legend call per axis (ax1) to avoid redundancy and potential display issues.
+
+Added robust argument parsing:
+Kept support for hex and float inputs for both block and key via a dedicated parse_block_or_key function.
+
+Improved logging setup:
+Logging level and format are controlled by verbosity flags, helping with debugging and cleaner output.
+
+Error handling:
+Wrapped visualization logic in try/except to catch and log unexpected errors gracefully.
+
+
+
+2. Project Dependency Management
+
+Created/Updated requirements.txt:
+Added explicit external dependencies:
+
+txt
+Copy
+Edit
+numpy>=1.18.0
+matplotlib>=3.0.0
+This allows easy environment setup, dependency tracking, and resolves IDE warnings about missing packages.
+
+Explained difference between imports and dependencies:
+Clarified that Python imports go in source code, while external packages must be listed in requirements.txt for installation.
+
+
+3. .gitignore Enhancements
+Merged common Python ignore patterns:
+Included patterns for:
+
+Bytecode files and caches
+
+Build, dist, eggs folders
+
+Virtual environments (venv/, env/, ENV/)
+
+IDE configs (.idea/, .vscode/)
+
+Logs and coverage reports
+
+Jupyter Notebook checkpoints and output files
+
+macOS specific system files (.DS_Store, .AppleDouble, .LSOverride)
+
+Environment variable files (.env)
+
+Pipenv and Poetry lock files (Pipfile.lock, poetry.lock)
+
+pytest cache directories
+
+This update helps keep the repository clean and avoids committing unnecessary or sensitive files.
+
+
+
+4. General Code Quality and Maintainability
+Encouraged adding comments and docstrings for clarity around data structures like history and waveform_data.
+
+Suggested adding unit tests and examples to ensure correctness and ease onboarding.
+
+Noted potential future improvements for Lyapunov exponent calculation accuracy and input validation.
+
+
+
+5. Next Steps
+Verify that signal_spiral_encrypt matches expected output format and data structure.
+
+Add unit tests for visualization and Lyapunov functions.
+
+Consider packaging the tool with a setup script for easier distribution.
+
+Explore refining Lyapunov exponent calculations for enhanced accuracy.
+
+Possibly create a README update reflecting dependencies and usage instructions.
+
+
+Summary:
+These updates improve the project’s robustness, reproducibility, and developer experience by fixing critical import issues, clarifying dependency management, cleaning repository ignore settings, and strengthening code quality practices.
+
+
+End of Journal Entry.
