@@ -1,2 +1,3 @@
-# Currently no external dependencies.
-# Add packages here if you start using libraries like numpy, matplotlib, etc.
+numpy>=1.18.0
+
+matplotlib>=3.0.0
