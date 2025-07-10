@@ -3,8 +3,9 @@ import json
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
+import visualize_encrypt
 from matplotlib.widgets import Slider
-from visualize_encrypt.pt
+
 
 def setup_logging(debug=False):
     level = logging.DEBUG if debug else logging.INFO
@@ -15,7 +16,7 @@ def setup_logging(debug=False):
 
 def generate_waveform_heatmap(block, key, rounds=100, modulus=(2**64 - 59)):
     """Generate heatmap data from waveform LSB per round for a single block/key."""
-    _, history, waveform = signal_spiral_encrypt(block, key, rounds=rounds, modulus=modulus)
+    _, history, waveform = visualize_encrypt(block, key, rounds=rounds, modulus=modulus)
     max_wave = max(waveform) if waveform else 255
     heatmap = np.zeros((max_wave + 1, rounds))
 
@@ -83,7 +84,7 @@ def block_to_bits(block, bit_width=64):
 
 def visualize_bit_diffusion(block, key, rounds=16, modulus=(2**64 - 59), save=False):
     """Visualize bit-level diffusion over rounds as a heatmap."""
-    _, history, _ = signal_spiral_encrypt(block, key, rounds=rounds, modulus=modulus)
+    _, history, _ = visualize_encrypt(block, key, rounds=rounds, modulus=modulus)
 
     bit_matrix = []
     for state, _, _ in history:
