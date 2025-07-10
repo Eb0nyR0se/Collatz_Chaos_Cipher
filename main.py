@@ -5,6 +5,7 @@ import json
 import logging
 import math
 
+
 def fractional_part(x):
     return x - math.floor(x)
 
@@ -127,24 +128,55 @@ def main():
     default_block_float = 12345.6789
     default_key_float = 98765.4321
 
+    encrypt = args.encrypt
+    decrypt = args.decrypt
+
+    # If neither encrypt nor decrypt flags given, ask interactively
+    if not encrypt and not decrypt:
+        while True:
+            choice = input("Do you want to (E)ncrypt or (D)ecrypt? ").strip().lower()
+            if choice == 'e':
+                encrypt = True
+                break
+            elif choice == 'd':
+                decrypt = True
+                break
+            else:
+                print("Please enter 'E' for encrypt or 'D' for decrypt.")
+
+    # Get key (from arg or input)
     try:
-        key = read_input(args.key, "key") if args.key else default_key_float
+        if args.key:
+            key = read_input(args.key, "key")
+        else:
+            key_str = input(f"Enter key (default {default_key_float}): ").strip()
+            key = float(key_str) if key_str else default_key_float
         validate_positive_float(key, "Key")
     except ValueError as e:
         print(f"Error: {e}")
         return
 
-    if args.encrypt:
-        if args.block is None:
-            block = default_block_float
-            print(f"No --block specified; using default plaintext block: {block}")
-        else:
+    if encrypt:
+        # Get block (from arg or input)
+        if args.block:
             try:
                 block = read_input(args.block, "block")
                 validate_positive_float(block, "Block")
             except ValueError as e:
                 print(f"Error: {e}")
                 return
+        else:
+            while True:
+                block_str = input(f"Enter plaintext block (default {default_block_float}): ").strip()
+                if not block_str:
+                    block = default_block_float
+                    break
+                try:
+                    block = float(block_str)
+                    validate_positive_float(block, "Block")
+                    break
+                except ValueError:
+                    print("Invalid input. Please enter a non-negative number.")
 
         logging.info(f"Encrypting block={block} with key={key}")
         ciphertext, history, waveform_data = signal_spiral_encrypt(block, key, rounds=args.rounds)
@@ -168,23 +200,40 @@ def main():
                 f.write(f"{ciphertext}\n")
             print(f"Ciphertext written to {args.output}")
 
-    elif args.decrypt:
-        if args.ciphertext is None or args.load_history is None:
-            print("Error: --ciphertext and --load-history are required for decryption.")
-            return
+    elif decrypt:
+        # Get ciphertext (from arg or input)
+        if args.ciphertext:
+            try:
+                ciphertext = read_input(args.ciphertext, "ciphertext")
+                validate_positive_float(ciphertext, "Ciphertext")
+            except ValueError as e:
+                print(f"Error: {e}")
+                return
+        else:
+            while True:
+                ciphertext_str = input("Enter ciphertext (float): ").strip()
+                try:
+                    ciphertext = float(ciphertext_str)
+                    validate_positive_float(ciphertext, "Ciphertext")
+                    break
+                except ValueError:
+                    print("Invalid input. Please enter a non-negative number.")
 
-        try:
-            ciphertext = read_input(args.ciphertext, "ciphertext")
-            validate_positive_float(ciphertext, "Ciphertext")
-        except ValueError as e:
-            print(f"Error: {e}")
-            return
-
-        try:
-            history = load_history(args.load_history)
-        except Exception as e:
-            print(f"Error loading history file: {e}")
-            return
+        # Load history file (from arg or input)
+        if args.load_history:
+            try:
+                history = load_history(args.load_history)
+            except Exception as e:
+                print(f"Error loading history file: {e}")
+                return
+        else:
+            while True:
+                history_path = input("Enter path to encryption history JSON file: ").strip()
+                try:
+                    history = load_history(history_path)
+                    break
+                except Exception as e:
+                    print(f"Error loading history file: {e}")
 
         logging.info(f"Decrypting ciphertext={ciphertext} with key={key}")
         plaintext = signal_spiral_decrypt(ciphertext, key, history)
@@ -198,10 +247,6 @@ def main():
             with open(args.output, "w") as f:
                 f.write(f"{plaintext}\n")
             print(f"Plaintext written to {args.output}")
-
-    else:
-        print("Please specify --encrypt or --decrypt")
-        logging.warning("No operation specified (encrypt or decrypt)")
 
 if __name__ == "__main__":
     main()
