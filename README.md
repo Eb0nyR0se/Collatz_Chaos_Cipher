@@ -1,6 +1,6 @@
 🌀 Collatz Chaos Cipher
 
-Welcome to the Collatz Chaos Cipher, a A curiosity-driven encryption experiment inspired by the Collatz Conjecture, chaotic systems, signal transformation, and cryptographic exploration blending mathematics, chaos theory, and signal processing. This project implements a reversible block cipher inspired by the famous 3x+1 Collatz function, extended to floating-point arithmetic and integrated with signal spiral dynamics.
+Welcome to the Collatz Chaos Cipher, a curiosity-driven encryption experiment inspired by the Collatz Conjecture, chaotic systems, signal transformation, and cryptographic exploration blending mathematics, chaos theory, and signal processing. This project implements a reversible block cipher inspired by the famous 3x+1 Collatz function, extended to floating-point arithmetic and integrated with signal spiral dynamics.
 
 Unlike conventional ciphers, this one leverages chaotic iteration and non-linear key transformations to produce unpredictable, avalanche-prone encrypted outputs. Alongside the core algorithm, the repository includes visualization tools to animate bit diffusion and waveform transformations during encryption rounds.
 
