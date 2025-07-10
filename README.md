@@ -9,6 +9,26 @@ This repository is ideal for cryptographers, mathematicians, chaos enthusiasts, 
 The Collatz Chaos Cipher blends number theory with dynamic iteration to produce a reversible block cipher rooted in chaos. Using float-based Collatz logic, signal spirals, and avalanche-prone state mutations, this cipher explores the edge between structured cryptography and creative entropy.
 #
 #
+Concept
+We’ll use a modified Collatz function for floats:
+
+If x is even-ish (we’ll define even-ish for float as: floor(x) % 2 == 0), do one transform
+
+Otherwise, do another transform
+
+This function will be iterated a fixed number of times on numeric values derived from the message.
+#
+The "encryption" will be to:
+
+Convert plaintext to numbers (e.g., ASCII codes)
+
+For each number, apply iterative Collatz-like transform (floating-point)
+
+Output transformed numbers as ciphertext
+
+The "decryption" applies inverse operations if possible (or just reverses the steps)
+#
+#
 ✨ Features:
 
 🔐 Chaotic block cipher built from 3x+1 logic, signal spirals, and entropy mutations
@@ -35,3 +55,9 @@ Anyone exploring the intersection of math, signals, and encryption
 Curious minds (not production systems (yet))
 #
 #
+Important disclaimers:
+This is NOT secure encryption.
+
+It’s a toy example demonstrating how you might use a Collatz-inspired iterative function as a pseudorandom transform.
+
+For educational or experimental purposes only!
