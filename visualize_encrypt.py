@@ -1,26 +1,28 @@
-import argparse 
-import matplotlib.pyplot as plt 
-import logging 
-import csv from cipher 
-import signal_spiral_encrypt, rol
+#File: visualize_encrypt.py
 
-def hamming_distance(a, b): """Compute the Hamming distance between two integers.""" return bin(a ^ b).count('1')
+import argparse
 
-def visualize_encryption(block, key, rounds=16, save=False, filename="encryption_visual.png", color_even='blue', color_odd='red', color_waveform='purple', verbose=False, export_csv=False, csv_filename="encryption_data.csv"): """ Visualize the Collatz Chaos Cipher encryption process with bit diffusion.
 
-Args:
-    block (int): The plaintext block to encrypt.
-    key (int): The encryption key.
-    rounds (int): Number of encryption rounds.
-    save (bool): Save plot to a file if True; otherwise display.
-    filename (str): Filename to save the visualization image.
-    color_even (str): Color for even rounds.
-    color_odd (str): Color for odd rounds.
-    color_waveform (str): Color for waveform plot.
-    verbose (bool): If True, enable verbose logging.
-    export_csv (bool): If True, export block values and waveform data to CSV.
-    csv_filename (str): Output CSV filename if export_csv is True.
-"""
+def hamming_distance(a, b): """Compute the Hamming distance between two integers."""
+return (bin(a ^ b).count('1'))
+
+def visualize_encryption(block, key, rounds=16, save=False, filename="encryption_visual.png", color_even='blue',
+                         color_odd='red', color_waveform='purple', verbose=False, export_csv=False,
+                         csv_filename="encryption_data.csv"):
+""" Visualize the Collatz Chaos Cipher encryption process with bit diffusion.
+
+        Args:
+            block (int): The plaintext block to encrypt.
+            key (int): The encryption key.
+            rounds (int): Number of encryption rounds.
+            save (bool): Save plot to a file if True; otherwise display.
+            filename (str): Filename to save the visualization image.
+            color_even (str): Color for even rounds.
+            color_odd (str): Color for odd rounds.
+            color_waveform (str): Color for waveform plot.
+            verbose (bool): If True, enable verbose logging.
+            export_csv (bool): If True, export block values and waveform data to CSV.
+            csv_filename (str): Output CSV filename if export_csv is True."""
 
 logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO,
                     format='[%(levelname)s] %(message)s')
@@ -89,7 +91,18 @@ except Exception as e:
     logging.error(f"Error during visualization: {e}")
     print(f"Error: {e}")
 
-def main(): parser = argparse.ArgumentParser(description="Visualize Collatz Chaos Cipher encryption") parser.add_argument("--block", type=lambda x: int(x, 0), required=True, help="Plaintext block (hex)") parser.add_argument("--key", type=lambda x: int(x, 0), required=True, help="Key (hex)") parser.add_argument("--rounds", type=int, default=16, help="Number of rounds") parser.add_argument("--save", action="store_true", help="Save visualization as PNG instead of showing it") parser.add_argument("--filename", type=str, default="encryption_visual.png", help="Filename to save image") parser.add_argument("--color-even", type=str, default="blue", help="Color for even rounds") parser.add_argument("--color-odd", type=str, default="red", help="Color for odd rounds") parser.add_argument("--color-waveform", type=str, default="purple", help="Color for waveform plot") parser.add_argument("--verbose", action="store_true", help="Enable verbose logging") parser.add_argument("--export-csv", action="store_true", help="Export block, waveform, and bit-diff to CSV") parser.add_argument("--csv-filename", type=str, default="encryption_data.csv", help="Output CSV filename")
+def main(): parser = argparse.ArgumentParser(description="Visualize Collatz Chaos Cipher encryption")
+parser.add_argument("--block", type=lambda x: int(x, 0), required=True, help="Plaintext block (hex)")
+parser.add_argument("--key", type=lambda x: int(x, 0), required=True, help="Key (hex)")
+parser.add_argument("--rounds", type=int, default=16, help="Number of rounds")
+parser.add_argument("--save", action="store_true", help="Save visualization as PNG instead of showing it")
+parser.add_argument("--filename", type=str, default="encryption_visual.png", help="Filename to save image")
+parser.add_argument("--color-even", type=str, default="blue", help="Color for even rounds")
+parser.add_argument("--color-odd", type=str, default="red", help="Color for odd rounds")
+parser.add_argument("--color-waveform", type=str, default="purple", help="Color for waveform plot")
+parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
+parser.add_argument("--export-csv", action="store_true", help="Export block, waveform, and bit-diff to CSV")
+parser.add_argument("--csv-filename", type=str, default="encryption_data.csv", help="Output CSV filename")
 
 args = parser.parse_args()
 visualize_encryption(args.block, args.key, rounds=args.rounds, save=args.save,
