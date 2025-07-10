@@ -4,8 +4,8 @@ import argparse
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
-from matplotlib import cm
 from cipher import signal_spiral_encrypt  # Adjust import path as needed
 
 def setup_logging(debug=False):
@@ -27,6 +27,12 @@ def hamming_distance(a, b):
     """Compute the number of differing bits between two integers."""
     return bin(a ^ b).count('1')
 
+def extract_int(val):
+    """Recursively extract an int from nested tuples or lists."""
+    if isinstance(val, (tuple, list)):
+        return extract_int(val[0])
+    return int(val)
+
 def generate_surface_data(block, key_start, key_end, steps, rounds):
     """
     Generate 3D surface data: block values, waveform LSB, and bit diffusion.
@@ -43,10 +49,16 @@ def generate_surface_data(block, key_start, key_end, steps, rounds):
     bit_diffusion_matrix = np.zeros((steps, rounds))
 
     for i, k in enumerate(keys):
-        ciphertext, history, waveform = signal_spiral_encrypt(block, int(k), rounds=rounds)
-        block_values = [h[0] for h in history]
+        key_int = extract_int(k)  # unwrap key if nested tuple/list
+        ciphertext, history, waveform = signal_spiral_encrypt(block, key_int, rounds=rounds)
+
+        # Safely unwrap integers from history
+        block_values = [extract_int(h[0]) for h in history]
         values_matrix[i, :] = block_values
-        waveform_matrix[i, :] = waveform
+
+        # Safely unwrap waveform integers (if nested)
+        waveform_vals = [extract_int(w) for w in waveform]
+        waveform_matrix[i, :] = waveform_vals
 
         # Compute bit diffusion (Hamming distance between rounds)
         bit_diffusion = [0]  # no previous round for first
@@ -54,7 +66,7 @@ def generate_surface_data(block, key_start, key_end, steps, rounds):
             bit_diffusion.append(hamming_distance(prev, curr))
         bit_diffusion_matrix[i, :] = bit_diffusion
 
-        logging.debug(f"Processed key {k}")
+        logging.debug(f"Processed key {key_int}")
 
     return keys, values_matrix, waveform_matrix, bit_diffusion_matrix
 
@@ -73,24 +85,22 @@ def plot_surface(keys, values_matrix, waveform_matrix, bit_diffusion_matrix,
         save_path: optional file path to save the plot
         interactive: if True, enable interactive plotting
     """
-    X, Y = np.meshgrid(np.arange(rounds), np.arange(len(keys)))
-    Z = values_matrix
+    x, y = np.meshgrid(np.arange(rounds), np.arange(len(keys)))
+    z = values_matrix
 
     if color_by == 'bit_diffusion':
-        # Normalize bit diffusion for coloring (max possible bits = 64)
-        W = bit_diffusion_matrix / 64
-        cmap = cm.plasma
+        w = bit_diffusion_matrix / 64
+        cmap = cm.get_cmap('plasma')  # <-- get colormap by string name
         label = 'Bit Diffusion (Normalized Hamming Distance)'
     else:
-        # Normalize waveform for coloring
-        W = waveform_matrix / 255
-        cmap = cm.viridis
+        w = waveform_matrix / 255
+        cmap = cm.get_cmap('viridis')  # <-- get colormap by string name
         label = 'Waveform LSB Intensity'
 
     fig = plt.figure(figsize=(12, 8))
     ax = fig.add_subplot(111, projection='3d')
 
-    surf = ax.plot_surface(X, Y, Z, facecolors=cmap(W), linewidth=0, antialiased=False)
+    ax.plot_surface(x, y, z, facecolors=cmap(w), linewidth=0, antialiased=False)
 
     ax.set_xlabel('Round')
     ax.set_ylabel('Key Index')
@@ -98,7 +108,7 @@ def plot_surface(keys, values_matrix, waveform_matrix, bit_diffusion_matrix,
     ax.set_title(f'3D Surface Plot of Block Values Over Rounds and Keys\n(Color = {label})')
 
     m = cm.ScalarMappable(cmap=cmap)
-    m.set_array(W)
+    m.set_array(w)
     fig.colorbar(m, shrink=0.5, aspect=10, label=label)
 
     if interactive:
@@ -112,7 +122,6 @@ def plot_surface(keys, values_matrix, waveform_matrix, bit_diffusion_matrix,
         print(f"Saved plot to {save_path}")
     else:
         plt.show()
-
 def main():
     parser = argparse.ArgumentParser(description="3D Encryption Surface Visualization for Collatz Chaos Cipher")
     parser.add_argument("--block", type=lambda x: int(x, 0), default=0x123456, help="Plaintext block (default: 0x123456)")
@@ -146,4 +155,3 @@ def main():
         print(f"Error: {e}")
 
 if __name__ == "__main__":
-    main()
