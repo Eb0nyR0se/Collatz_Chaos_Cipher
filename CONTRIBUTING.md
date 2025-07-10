@@ -1,8 +1,7 @@
 # Contributing to Collatz Chaos Cipher
 
 Thank you for your interest in contributing! Your help is what makes this project better.
-#
-#
+
 ## How to Contribute
 
 1. **Report Issues:**  
