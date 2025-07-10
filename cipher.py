@@ -37,7 +37,7 @@ def signal_spiral_decrypt(ciphertext, key, history, modulus=(2**64 - 59)):
             b = ((b ^ rol(k, original % 32)) - k) // 3
     return b
 
-DEFAULT_KEY = 0xDEADBEEFCAFEBABE1234567890ABCDEF
+DEFAULT_KEY = 0x4242424242424242
 DEFAULT_BLOCK = 0x1122334455667788
 
 def setup_logging(debug=False):
