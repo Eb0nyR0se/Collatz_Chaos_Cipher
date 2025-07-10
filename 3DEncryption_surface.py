@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 from matplotlib import cm
-from cipher_core import signal_spiral_encrypt  # Adjust import path as needed
+from cipher_core import visualize_encrypt  # Adjust import path as needed
 
 def setup_logging(debug=False):
     """Configure logging."""
