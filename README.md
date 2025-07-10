@@ -69,7 +69,9 @@ This fractal, generated from a Collatz-like function extended into the complex p
 ![Collatz Fractal](./assets/images/collatz_fractal.png)
 #
 #
-Here's a visualization of the non-integer Collatz-like trajectories. Each line represents how a different non-integer starting value evolves under the (even: x/2, odd: (3x+1)/2) rule. You can see chaotic decay patterns that hint at sensitive dependence on initial conditions, a hallmark of complex dynamical systems.
+Here's a visualization of the non-integer Collatz-like trajectories. 
+
+Each line represents how a different non-integer starting value evolves under the (even: x/2, odd: (3x+1)/2) rule. You can see chaotic decay patterns that hint at sensitive dependence on initial conditions, a hallmark of complex dynamical systems.
 
 
 ![Non-Integer Collatz-Conjuncture Trajectories](./assets/images/non-integer_collatz-conjecture_trajectories.png)
