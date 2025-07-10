@@ -4,7 +4,7 @@ import argparse
 
 
 def hamming_distance(a, b): """Compute the Hamming distance between two integers."""
-return (bin(a ^ b).count('1'))
+print(hamming_distance(0b1010, 0b0011))  # Output: 2
 
 def visualize_encryption(block, key, rounds=16, save=False, filename="encryption_visual.png", color_even='blue',
                          color_odd='red', color_waveform='purple', verbose=False, export_csv=False,
