@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
-from cipher import signal_spiral_encrypt  # Make sure this imports your float-based cipher
+from main import signal_spiral_encrypt  # Make sure this imports your float-based cipher
 
 def setup_logging(debug=False):
     """Configure logging."""
