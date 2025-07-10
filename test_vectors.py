@@ -1,4 +1,4 @@
-#File: test_vectors.py
+# File: test_vectors.py
 
 from cipher import signal_spiral_encrypt, signal_spiral_decrypt
 
@@ -24,7 +24,7 @@ def run_test_vectors():
         pt = case["plaintext"]
         key = case["key"]
 
-        ct, history = signal_spiral_encrypt(pt, key)
+        ct, history, _ = signal_spiral_encrypt(pt, key)
         recovered = signal_spiral_decrypt(ct, key, history)
 
         print(f"Test Case {i}")
