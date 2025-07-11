@@ -22,49 +22,38 @@ def setup_logging(debug=False):
 
 def signal_spiral_encrypt(block: float, key: float, rounds: int = 100):
     """
-    Encrypts the block with the given key using a Collatz-inspired float + 256-bit int transform.
-    Returns:
-      ciphertext: final encrypted float value
-      history: list of tuples containing intermediate float states (for plotting)
-      waveform: list of waveform intensity values (0-255) representing some signal component
+    Encrypt the block with the given key using Collatz-inspired float + 256-bit int transform.
+    Returns ciphertext, history, waveform.
     """
     history = []
     waveform = []
 
-    # Convert block and key to 256-bit integer representation by scaling
-    scale_factor = 10 ** 9  # scale floats to int (adjust precision)
+    scale_factor = 10 ** 9
     block_int = int(block * scale_factor)
     key_int = int(key * scale_factor)
-
-    # Modulus for 256-bit: 2^256 (huge number)
     modulus = 2 ** 256
 
     current = block_int
     for r in range(rounds):
-        # Collatz-inspired step on int:
         if current % 2 == 0:
             current = (current // 2) % modulus
         else:
             current = (3 * current + key_int) % modulus
 
-        # Convert back to float for history (scale back down)
         current_float = current / scale_factor
         history.append((current_float,))
-
-        # Waveform value could be low byte of current mod 256
         waveform.append(current % 256)
 
-    ciphertext = current / scale_factor  # final ciphertext as float
-
+    ciphertext = current / scale_factor
     return ciphertext, history, waveform
 
 
 def signal_spiral_decrypt(ciphertext: float, key: float, rounds: int = 100):
     """
-    Dummy decrypt to illustrate — actual inversion depends on encryption.
-    For a non-invertible Collatz-like transform, exact decryption may be impossible.
-    This is just a placeholder.
+    Placeholder decryption for demonstration.
+    Actual non-invertible Collatz decryption is complex or impossible.
     """
+    # This dummy decrypt just returns the ciphertext and empty lists
     return ciphertext, [], []
 
 
@@ -87,7 +76,7 @@ def generate_surface_data(block, key_start, key_end, steps, rounds, quiet=False)
 
     iterator = keys if quiet else tqdm(keys, desc="Generating surface data")
     for i, k in enumerate(iterator):
-        k = float(k)  # Ensure key is float
+        k = float(k)
         ciphertext, history, waveform = signal_spiral_encrypt(block, k, rounds=rounds)
         block_values = [extract_float(h[0]) for h in history]
         values_matrix[i, :] = block_values
@@ -119,7 +108,7 @@ def export_stats_csv(keys, diffusion_matrix, waveform_matrix, filename="stats_ex
 def plot_surface(keys, values_matrix, waveform_matrix, diffusion_matrix,
                  rounds, color_by='waveform', save_path=None, interactive=False,
                  azim=45, elev=30, colormap_name=None, export_csv=False, animate=False):
-    mpl.style.use('dark_background')  # Set dark background globally
+    mpl.style.use('dark_background')
 
     x, y = np.meshgrid(np.arange(rounds), np.arange(len(keys)))
     z = values_matrix
@@ -147,7 +136,6 @@ def plot_surface(keys, values_matrix, waveform_matrix, diffusion_matrix,
         alpha=0.85
     )
 
-    # Add wireframe edges separately (fixes matplotlib error)
     ax.plot_wireframe(x, y, z, color='k', linewidth=0.3, alpha=0.3)
 
     ax.contourf(x, y, z, zdir='z', offset=z.min(), cmap=cmap, alpha=0.25)
@@ -155,10 +143,9 @@ def plot_surface(keys, values_matrix, waveform_matrix, diffusion_matrix,
     ax.set_xlabel('Round')
     ax.set_ylabel('Key Index')
     ax.set_zlabel('Block Value')
-    ax.set_title(f'3D Surface of Encrypted Block\nColor = {label}  \u2022  View = azim {azim}\u00b0, elev {elev}\u00b0')
+    ax.set_title(f'3D Surface of Encrypted Block\nColor = {label}  •  View = azim {azim}°, elev {elev}°')
     ax.view_init(elev=elev, azim=azim)
 
-    # Label max and min points
     max_idx = np.unravel_index(np.argmax(z), z.shape)
     min_idx = np.unravel_index(np.argmin(z), z.shape)
     ax.text(max_idx[1], max_idx[0], z[max_idx], "Max", color='red', fontsize=10, weight='bold')
@@ -175,22 +162,40 @@ def plot_surface(keys, values_matrix, waveform_matrix, diffusion_matrix,
     plt.show()
 
 
-def main():
-    print("\nVisualizing Encryption Chaos: 3D Surface Tool")
-    print("--------------------------------------------------")
-    print("You're witnessing a real-time 3D visualization of how a float-based")
-    print("encryption algorithm (inspired by the Collatz Conjecture) evolves.")
-    print("Each surface point represents a transformed block value across")
-    print("multiple rounds and key variations.\n")
-    print(" Height = Encrypted block value")
-    print(" Color = Either waveform intensity or diffusion")
-    print(" Animated view and statistical CSV export are also supported.")
-    print("--------------------------------------------------\n")
+import argparse
+import logging
+import numpy as np
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import csv
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
+from tqdm import tqdm
 
-    parser = argparse.ArgumentParser(
-        description="3D Encryption Surface Visualization for Float Collatz Chaos Cipher"
+# (Assuming signal_spiral_encrypt and decrypt are defined earlier in the file or imported)
+
+def setup_logging(debug=False):
+    level = logging.DEBUG if debug else logging.INFO
+    logging.basicConfig(
+        filename='3d_encryption_surface.log',
+        filemode='a',
+        format='%(asctime)s %(levelname)s: %(message)s',
+        level=level,
     )
+
+def validate_positive_int(value, name):
+    if value <= 0:
+        raise ValueError(f"{name} must be a positive integer.")
+
+# (Other helper functions and definitions here...)
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="3D Encryption Surface Visualization and Collatz-based Cipher"
+    )
+    parser.add_argument("--mode", choices=["visualize", "encrypt", "decrypt"], default=None,
+                        help="Choose mode: 'visualize', 'encrypt', or 'decrypt'")
     parser.add_argument("--block", type=float, default=12345.6789)
+    parser.add_argument("--key", type=float, default=None)
     parser.add_argument("--key-start", type=float, default=100000.0)
     parser.add_argument("--key-end", type=float, default=1000000.0)
     parser.add_argument("--steps", type=int, default=200)
@@ -209,36 +214,78 @@ def main():
 
     setup_logging(args.debug)
 
+    if args.mode is None:
+        print("\nVisualizing Encryption Chaos: 3D Surface Tool")
+        print("--------------------------------------------------")
+        print("You're witnessing a real-time 3D visualization of how a float-based")
+        print("encryption algorithm (inspired by the Collatz Conjecture) evolves.")
+        print("Each surface point represents a transformed block value across")
+        print("multiple rounds and key variations.\n")
+        print(" Height = Encrypted block value")
+        print(" Color = Either waveform intensity or diffusion")
+        print(" Animated view and statistical CSV export are also supported.")
+        print("--------------------------------------------------\n")
+
+        while True:
+            mode_input = input("Choose mode ('visualize', 'encrypt', 'decrypt'): ").strip().lower()
+            if mode_input in ["visualize", "encrypt", "decrypt"]:
+                args.mode = mode_input
+                break
+            else:
+                print("Invalid mode. Please enter 'visualize', 'encrypt', or 'decrypt'.")
+
     try:
-        validate_positive_int(args.steps, "Steps")
         validate_positive_int(args.rounds, "Rounds")
 
-        if args.key_start >= args.key_end:
-            raise ValueError("key-start must be less than key-end")
+        if args.mode == "visualize":
+            if args.key_start >= args.key_end:
+                raise ValueError("key-start must be less than key-end")
 
-        keys, values_matrix, waveform_matrix, diffusion_matrix = generate_surface_data(
-            args.block, args.key_start, args.key_end, args.steps, args.rounds, quiet=args.quiet
-        )
+            # Generate surface data
+            keys, values_matrix, waveform_matrix, diffusion_matrix = generate_surface_data(
+                args.block, args.key_start, args.key_end, args.steps, args.rounds, quiet=args.quiet
+            )
 
-        plot_surface(
-            keys,
-            values_matrix,
-            waveform_matrix,
-            diffusion_matrix,
-            rounds=args.rounds,
-            color_by=args.color_by,
-            save_path=args.save,
-            interactive=args.interactive,
-            azim=args.azim,
-            elev=args.elev,
-            colormap_name=args.colormap,
-            export_csv=args.export_csv,
-            animate=args.animate
-        )
+            # Plot surface
+            plot_surface(
+                keys,
+                values_matrix,
+                waveform_matrix,
+                diffusion_matrix,
+                rounds=args.rounds,
+                color_by=args.color_by,
+                save_path=args.save,
+                interactive=args.interactive,
+                azim=args.azim,
+                elev=args.elev,
+                colormap_name=args.colormap,
+                export_csv=args.export_csv,
+                animate=args.animate
+            )
+
+        elif args.mode == "encrypt":
+            if args.key is None:
+                args.key = float(input("Enter key value for encryption: "))
+            ciphertext, history, waveform = signal_spiral_encrypt(args.block, args.key, rounds=args.rounds)
+            print(f"Encrypted ciphertext: {ciphertext}")
+            print(f"Encryption history (last 5 rounds): {[h[0] for h in history[-5:]]}")
+            print(f"Waveform (last 5 rounds): {waveform[-5:]}")
+
+        elif args.mode == "decrypt":
+            if args.key is None:
+                args.key = float(input("Enter key value for decryption: "))
+            plaintext, history, waveform = signal_spiral_decrypt(args.block, args.key, rounds=args.rounds)
+            print(f"Decrypted plaintext: {plaintext}")
+            print(f"Decryption history (if any): {history}")
+            print(f"Waveform (if any): {waveform}")
 
     except Exception as e:
         logging.error(f"Error: {e}")
         print(f"Error: {e}")
+
+if __name__ == "__main__":
+    main()
+
 
 
 if __name__ == "__main__":
