@@ -1,15 +1,13 @@
+# File: main.py
+
 import argparse
 import logging
 import numpy as np
 import matplotlib as mpl
-mpl.style.use('dark_background')  # Set dark background globally
 import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-import matplotlib.cm as cm
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
-from main import signal_spiral_encrypt_256 as signal_spiral_encrypt
-from tqdm import tqdm
 import csv
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
+from tqdm import tqdm
 
 
 def setup_logging(debug=False):
@@ -20,6 +18,54 @@ def setup_logging(debug=False):
         format='%(asctime)s %(levelname)s: %(message)s',
         level=level,
     )
+
+
+def signal_spiral_encrypt(block: float, key: float, rounds: int = 100):
+    """
+    Encrypts the block with the given key using a Collatz-inspired float + 256-bit int transform.
+    Returns:
+      ciphertext: final encrypted float value
+      history: list of tuples containing intermediate float states (for plotting)
+      waveform: list of waveform intensity values (0-255) representing some signal component
+    """
+    history = []
+    waveform = []
+
+    # Convert block and key to 256-bit integer representation by scaling
+    scale_factor = 10 ** 9  # scale floats to int (adjust precision)
+    block_int = int(block * scale_factor)
+    key_int = int(key * scale_factor)
+
+    # Modulus for 256-bit: 2^256 (huge number)
+    modulus = 2 ** 256
+
+    current = block_int
+    for r in range(rounds):
+        # Collatz-inspired step on int:
+        if current % 2 == 0:
+            current = (current // 2) % modulus
+        else:
+            current = (3 * current + key_int) % modulus
+
+        # Convert back to float for history (scale back down)
+        current_float = current / scale_factor
+        history.append((current_float,))
+
+        # Waveform value could be low byte of current mod 256
+        waveform.append(current % 256)
+
+    ciphertext = current / scale_factor  # final ciphertext as float
+
+    return ciphertext, history, waveform
+
+
+def signal_spiral_decrypt(ciphertext: float, key: float, rounds: int = 100):
+    """
+    Dummy decrypt to illustrate — actual inversion depends on encryption.
+    For a non-invertible Collatz-like transform, exact decryption may be impossible.
+    This is just a placeholder.
+    """
+    return ciphertext, [], []
 
 
 def validate_positive_int(value, name):
@@ -41,6 +87,7 @@ def generate_surface_data(block, key_start, key_end, steps, rounds, quiet=False)
 
     iterator = keys if quiet else tqdm(keys, desc="Generating surface data")
     for i, k in enumerate(iterator):
+        k = float(k)  # Ensure key is float
         ciphertext, history, waveform = signal_spiral_encrypt(block, k, rounds=rounds)
         block_values = [extract_float(h[0]) for h in history]
         values_matrix[i, :] = block_values
@@ -72,6 +119,7 @@ def export_stats_csv(keys, diffusion_matrix, waveform_matrix, filename="stats_ex
 def plot_surface(keys, values_matrix, waveform_matrix, diffusion_matrix,
                  rounds, color_by='waveform', save_path=None, interactive=False,
                  azim=45, elev=30, colormap_name=None, export_csv=False, animate=False):
+    mpl.style.use('dark_background')  # Set dark background globally
 
     x, y = np.meshgrid(np.arange(rounds), np.arange(len(keys)))
     z = values_matrix
@@ -91,15 +139,16 @@ def plot_surface(keys, values_matrix, waveform_matrix, diffusion_matrix,
     fig = plt.figure(figsize=(10, 6))
     ax = fig.add_subplot(111, projection='3d')
 
-    # Semi-transparent surface with wireframe edge
-    ax.plot_surface(
+    surf = ax.plot_surface(
         x, y, z,
         facecolors=cmap(w),
-        edgecolors='k',
         linewidth=0.3,
         antialiased=True,
         alpha=0.85
     )
+
+    # Add wireframe edges separately (fixes matplotlib error)
+    ax.plot_wireframe(x, y, z, color='k', linewidth=0.3, alpha=0.3)
 
     ax.contourf(x, y, z, zdir='z', offset=z.min(), cmap=cmap, alpha=0.25)
 
@@ -115,31 +164,15 @@ def plot_surface(keys, values_matrix, waveform_matrix, diffusion_matrix,
     ax.text(max_idx[1], max_idx[0], z[max_idx], "Max", color='red', fontsize=10, weight='bold')
     ax.text(min_idx[1], min_idx[0], z[min_idx], "Min", color='blue', fontsize=10, weight='bold')
 
-    norm = colors.Normalize(vmin=w.min(), vmax=w.max())
-    m = cm.ScalarMappable(norm=norm, cmap=cmap)
+    norm = mpl.colors.Normalize(vmin=w.min(), vmax=w.max())
+    m = mpl.cm.ScalarMappable(norm=norm, cmap=cmap)
     m.set_array(w)
     fig.colorbar(m, ax=ax, shrink=0.5, aspect=12, label=label)
 
     if export_csv:
         export_stats_csv(keys, diffusion_matrix, waveform_matrix)
 
-    if animate:
-        import matplotlib.animation as animation
-        def update(frame):
-            ax.view_init(elev=elev, azim=frame)
-            return fig,
-        ani = animation.FuncAnimation(fig, update, frames=np.arange(0, 360, 2), blit=False)
-        gif_path = save_path if save_path and save_path.lower().endswith('.gif') else '3d_surface_rotation.gif'
-        ani.save(gif_path, writer='pillow', fps=20)
-        print(f"Saved animation GIF to {gif_path}")
-        plt.close(fig)
-    elif save_path:
-        plt.savefig(save_path)
-        print(f"Saved plot to {save_path}")
-    else:
-        if interactive:
-            plt.ion()
-        plt.show()
+    plt.show()
 
 
 def main():
@@ -154,7 +187,9 @@ def main():
     print(" Animated view and statistical CSV export are also supported.")
     print("--------------------------------------------------\n")
 
-    parser = argparse.ArgumentParser(description="3D Encryption Surface Visualization for Float Collatz Chaos Cipher")
+    parser = argparse.ArgumentParser(
+        description="3D Encryption Surface Visualization for Float Collatz Chaos Cipher"
+    )
     parser.add_argument("--block", type=float, default=12345.6789)
     parser.add_argument("--key-start", type=float, default=100000.0)
     parser.add_argument("--key-end", type=float, default=1000000.0)
@@ -177,18 +212,20 @@ def main():
     try:
         validate_positive_int(args.steps, "Steps")
         validate_positive_int(args.rounds, "Rounds")
+
         if args.key_start >= args.key_end:
             raise ValueError("key-start must be less than key-end")
 
         keys, values_matrix, waveform_matrix, diffusion_matrix = generate_surface_data(
-            args.block, args.key_start, args.key_end, args.steps, args.rounds, quiet=args.quiet)
+            args.block, args.key_start, args.key_end, args.steps, args.rounds, quiet=args.quiet
+        )
 
         plot_surface(
             keys,
             values_matrix,
             waveform_matrix,
             diffusion_matrix,
-            args.rounds,
+            rounds=args.rounds,
             color_by=args.color_by,
             save_path=args.save,
             interactive=args.interactive,
