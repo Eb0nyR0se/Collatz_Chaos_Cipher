@@ -1,14 +1,17 @@
-# File: main.py
+# main.py
 
 import argparse
 import logging
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import csv
+import matplotlib.colors as colors
+import matplotlib.cm as cm
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 from tqdm import tqdm
+import csv
 
+mpl.style.use('dark_background')
 
 def setup_logging(debug=False):
     level = logging.DEBUG if debug else logging.INFO
@@ -19,27 +22,21 @@ def setup_logging(debug=False):
         level=level,
     )
 
-
 def signal_spiral_encrypt(block: float, key: float, rounds: int = 100):
-    """
-    Encrypt the block with the given key using Collatz-inspired float + 256-bit int transform.
-    Returns ciphertext, history, waveform.
-    """
+    scale_factor = 10**9
+    block_int = int(block * scale_factor)
+    key_int = int(key * scale_factor)
+    modulus = 2**256
+
+    current = block_int
     history = []
     waveform = []
 
-    scale_factor = 10 ** 9
-    block_int = int(block * scale_factor)
-    key_int = int(key * scale_factor)
-    modulus = 2 ** 256
-
-    current = block_int
-    for r in range(rounds):
+    for _ in range(rounds):
         if current % 2 == 0:
             current = (current // 2) % modulus
         else:
             current = (3 * current + key_int) % modulus
-
         current_float = current / scale_factor
         history.append((current_float,))
         waveform.append(current % 256)
@@ -47,26 +44,18 @@ def signal_spiral_encrypt(block: float, key: float, rounds: int = 100):
     ciphertext = current / scale_factor
     return ciphertext, history, waveform
 
-
 def signal_spiral_decrypt(ciphertext: float, key: float, rounds: int = 100):
-    """
-    Placeholder decryption for demonstration.
-    Actual non-invertible Collatz decryption is complex or impossible.
-    """
-    # This dummy decrypt just returns the ciphertext and empty lists
+    # Placeholder - decryption not implemented
     return ciphertext, [], []
-
 
 def validate_positive_int(value, name):
     if value <= 0:
         raise ValueError(f"{name} must be a positive integer.")
 
-
 def extract_float(val):
     if isinstance(val, (tuple, list)):
         return extract_float(val[0])
     return float(val)
-
 
 def generate_surface_data(block, key_start, key_end, steps, rounds, quiet=False):
     keys = np.linspace(key_start, key_end, steps)
@@ -93,7 +82,6 @@ def generate_surface_data(block, key_start, key_end, steps, rounds, quiet=False)
 
     return keys, values_matrix, waveform_matrix, diffusion_matrix
 
-
 def export_stats_csv(keys, diffusion_matrix, waveform_matrix, filename="stats_export.csv"):
     with open(filename, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
@@ -104,11 +92,9 @@ def export_stats_csv(keys, diffusion_matrix, waveform_matrix, filename="stats_ex
             writer.writerow([i, key, mean_diff, mean_wave])
     print(f"Exported stats to {filename}")
 
-
 def plot_surface(keys, values_matrix, waveform_matrix, diffusion_matrix,
                  rounds, color_by='waveform', save_path=None, interactive=False,
                  azim=45, elev=30, colormap_name=None, export_csv=False, animate=False):
-    mpl.style.use('dark_background')
 
     x, y = np.meshgrid(np.arange(rounds), np.arange(len(keys)))
     z = values_matrix
@@ -136,8 +122,6 @@ def plot_surface(keys, values_matrix, waveform_matrix, diffusion_matrix,
         alpha=0.85
     )
 
-    ax.plot_wireframe(x, y, z, color='k', linewidth=0.3, alpha=0.3)
-
     ax.contourf(x, y, z, zdir='z', offset=z.min(), cmap=cmap, alpha=0.25)
 
     ax.set_xlabel('Round')
@@ -151,142 +135,76 @@ def plot_surface(keys, values_matrix, waveform_matrix, diffusion_matrix,
     ax.text(max_idx[1], max_idx[0], z[max_idx], "Max", color='red', fontsize=10, weight='bold')
     ax.text(min_idx[1], min_idx[0], z[min_idx], "Min", color='blue', fontsize=10, weight='bold')
 
-    norm = mpl.colors.Normalize(vmin=w.min(), vmax=w.max())
-    m = mpl.cm.ScalarMappable(norm=norm, cmap=cmap)
+    norm = colors.Normalize(vmin=w.min(), vmax=w.max())
+    m = cm.ScalarMappable(norm=norm, cmap=cmap)
     m.set_array(w)
     fig.colorbar(m, ax=ax, shrink=0.5, aspect=12, label=label)
 
     if export_csv:
         export_stats_csv(keys, diffusion_matrix, waveform_matrix)
 
-    plt.show()
+    if animate:
+        import matplotlib.animation as animation
 
+        def update(frame):
+            ax.view_init(elev=elev, azim=frame)
+            return fig,
 
-import argparse
-import logging
-import numpy as np
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-import csv
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
-from tqdm import tqdm
-
-# (Assuming signal_spiral_encrypt and decrypt are defined earlier in the file or imported)
-
-def setup_logging(debug=False):
-    level = logging.DEBUG if debug else logging.INFO
-    logging.basicConfig(
-        filename='3d_encryption_surface.log',
-        filemode='a',
-        format='%(asctime)s %(levelname)s: %(message)s',
-        level=level,
-    )
-
-def validate_positive_int(value, name):
-    if value <= 0:
-        raise ValueError(f"{name} must be a positive integer.")
-
-# (Other helper functions and definitions here...)
+        ani = animation.FuncAnimation(fig, update, frames=np.arange(0, 360, 2), blit=False)
+        gif_path = save_path if save_path and save_path.lower().endswith('.gif') else '3d_surface_rotation.gif'
+        ani.save(gif_path, writer='pillow', fps=20)
+        print(f"Saved animation GIF to {gif_path}")
+        plt.close(fig)
+    elif save_path:
+        plt.savefig(save_path)
+        print(f"Saved plot to {save_path}")
+    else:
+        if interactive:
+            plt.ion()
+        plt.show()
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="3D Encryption Surface Visualization and Collatz-based Cipher"
-    )
-    parser.add_argument("--mode", choices=["visualize", "encrypt", "decrypt"], default=None,
-                        help="Choose mode: 'visualize', 'encrypt', or 'decrypt'")
-    parser.add_argument("--block", type=float, default=12345.6789)
-    parser.add_argument("--key", type=float, default=None)
-    parser.add_argument("--key-start", type=float, default=100000.0)
-    parser.add_argument("--key-end", type=float, default=1000000.0)
-    parser.add_argument("--steps", type=int, default=200)
-    parser.add_argument("--rounds", type=int, default=100)
-    parser.add_argument("--color-by", choices=['waveform', 'diffusion'], default='waveform')
-    parser.add_argument("--save", type=str)
-    parser.add_argument("--interactive", action="store_true")
-    parser.add_argument("--debug", action="store_true")
-    parser.add_argument("--quiet", action="store_true")
-    parser.add_argument("--azim", type=float, default=45)
-    parser.add_argument("--elev", type=float, default=30)
-    parser.add_argument("--colormap", type=str, default=None)
-    parser.add_argument("--export-csv", action="store_true")
-    parser.add_argument("--animate", action="store_true")
-    args = parser.parse_args()
+    setup_logging(False)  # or True if you want debug by default
+    print("\nVisualizing Encryption Chaos: 3D Surface Tool")
+    print("--------------------------------------------------")
+    print("You're witnessing a real-time 3D visualization of how a float-based")
+    print("encryption algorithm (inspired by the Collatz Conjecture) evolves.")
+    print("Each surface point represents a transformed block value across")
+    print("multiple rounds and key variations.\n")
+    print(" Height = Encrypted block value")
+    print(" Color = Either waveform intensity or diffusion")
+    print(" Animated view and statistical CSV export are also supported.")
+    print("--------------------------------------------------\n")
+    print("Choose an option:")
+    print("1) Encrypt")
+    print("2) Decrypt")
+    print("3) Visualize")
+    choice = input("Enter 1, 2, or 3: ").strip()
 
-    setup_logging(args.debug)
-
-    if args.mode is None:
-        print("\nVisualizing Encryption Chaos: 3D Surface Tool")
-        print("--------------------------------------------------")
-        print("You're witnessing a real-time 3D visualization of how a float-based")
-        print("encryption algorithm (inspired by the Collatz Conjecture) evolves.")
-        print("Each surface point represents a transformed block value across")
-        print("multiple rounds and key variations.\n")
-        print(" Height = Encrypted block value")
-        print(" Color = Either waveform intensity or diffusion")
-        print(" Animated view and statistical CSV export are also supported.")
-        print("--------------------------------------------------\n")
-
-        while True:
-            mode_input = input("Choose mode ('visualize', 'encrypt', 'decrypt'): ").strip().lower()
-            if mode_input in ["visualize", "encrypt", "decrypt"]:
-                args.mode = mode_input
-                break
-            else:
-                print("Invalid mode. Please enter 'visualize', 'encrypt', or 'decrypt'.")
-
-    try:
-        validate_positive_int(args.rounds, "Rounds")
-
-        if args.mode == "visualize":
-            if args.key_start >= args.key_end:
-                raise ValueError("key-start must be less than key-end")
-
-            # Generate surface data
-            keys, values_matrix, waveform_matrix, diffusion_matrix = generate_surface_data(
-                args.block, args.key_start, args.key_end, args.steps, args.rounds, quiet=args.quiet
-            )
-
-            # Plot surface
-            plot_surface(
-                keys,
-                values_matrix,
-                waveform_matrix,
-                diffusion_matrix,
-                rounds=args.rounds,
-                color_by=args.color_by,
-                save_path=args.save,
-                interactive=args.interactive,
-                azim=args.azim,
-                elev=args.elev,
-                colormap_name=args.colormap,
-                export_csv=args.export_csv,
-                animate=args.animate
-            )
-
-        elif args.mode == "encrypt":
-            if args.key is None:
-                args.key = float(input("Enter key value for encryption: "))
-            ciphertext, history, waveform = signal_spiral_encrypt(args.block, args.key, rounds=args.rounds)
-            print(f"Encrypted ciphertext: {ciphertext}")
-            print(f"Encryption history (last 5 rounds): {[h[0] for h in history[-5:]]}")
-            print(f"Waveform (last 5 rounds): {waveform[-5:]}")
-
-        elif args.mode == "decrypt":
-            if args.key is None:
-                args.key = float(input("Enter key value for decryption: "))
-            plaintext, history, waveform = signal_spiral_decrypt(args.block, args.key, rounds=args.rounds)
-            print(f"Decrypted plaintext: {plaintext}")
-            print(f"Decryption history (if any): {history}")
-            print(f"Waveform (if any): {waveform}")
-
-    except Exception as e:
-        logging.error(f"Error: {e}")
-        print(f"Error: {e}")
-
-if __name__ == "__main__":
-    main()
-
-
+    if choice == '1':
+        block = float(input("Enter block (float): "))
+        key = float(input("Enter key (float): "))
+        rounds = int(input("Enter rounds (default 100): ") or "100")
+        ciphertext, _, _ = signal_spiral_encrypt(block, key, rounds=rounds)
+        print(f"Ciphertext: {ciphertext}")
+    elif choice == '2':
+        ciphertext = float(input("Enter ciphertext (float): "))
+        key = float(input("Enter key (float): "))
+        rounds = int(input("Enter rounds (default 100): ") or "100")
+        plaintext, _, _ = signal_spiral_decrypt(ciphertext, key, rounds=rounds)
+        print(f"Decrypted (approx.): {plaintext}")
+    elif choice == '3':
+        block = float(input("Enter block (float, default 12345.6789): ") or "12345.6789")
+        key_start = float(input("Enter key start (default 100000): ") or "100000")
+        key_end = float(input("Enter key end (default 1000000): ") or "1000000")
+        steps = int(input("Enter steps (default 200): ") or "200")
+        rounds = int(input("Enter rounds (default 100): ") or "100")
+        keys, values_matrix, waveform_matrix, diffusion_matrix = generate_surface_data(
+            block, key_start, key_end, steps, rounds, quiet=False
+        )
+        plot_surface(keys, values_matrix, waveform_matrix, diffusion_matrix, rounds=rounds)
+    else:
+        print("Invalid choice, exiting.")
 
 if __name__ == "__main__":
     main()
