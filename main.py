@@ -1,251 +1,208 @@
-# File: main.py
-
 import argparse
-import json
 import logging
-import math
+import numpy as np
+import matplotlib as mpl
+mpl.style.use('dark_background')  # Set dark background globally
+import matplotlib.pyplot as plt
+import matplotlib.colors as colors
+import matplotlib.cm as cm
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
+from main import signal_spiral_encrypt_256 as signal_spiral_encrypt
+from tqdm import tqdm
+import csv
 
-def fractional_part(x):
-    return x - math.floor(x)
-
-def signal_spiral_encrypt(block, key, rounds=16):
-    b = float(block)
-    k = float(key)
-    history = []
-    waveform_data = []
-
-    for i in range(rounds):
-        frac = fractional_part(b)
-        # Define "even" as fractional part < 0.5 (heuristic)
-        even = frac < 0.5
-
-        # Record state for history and waveform visualization
-        history.append((b, even, k))
-        waveform_data.append(int(frac * 255))
-
-        if even:
-            # Non-integer Collatz "even" step with key mixing
-            b = (b / 2.0) + k
-        else:
-            # Non-integer Collatz "odd" step with key mixing
-            b = (3 * b + k) / 2.0
-
-    return b, history, waveform_data
-
-def signal_spiral_decrypt(ciphertext, _key, history):
-    b = float(ciphertext)
-    # k = float(_key)  # Not needed, remove this line
-
-    # Reverse through history
-    for original, even, key_val in reversed(history):
-        if even:
-            # Inverse of encryption "even" step
-            b = 2 * (b - key_val)
-        else:
-            # Inverse of encryption "odd" step
-            b = (2 * b - key_val) / 3
-
-    return b
-
-default_key = 0x4242424242424242
-default_block = 0x1122334455667788
 
 def setup_logging(debug=False):
     level = logging.DEBUG if debug else logging.INFO
     logging.basicConfig(
-        filename='cipher.log',
+        filename='3d_encryption_surface.log',
         filemode='a',
         format='%(asctime)s %(levelname)s: %(message)s',
         level=level,
     )
 
-def save_history(history, path):
-    """Save encryption history to JSON file."""
-    # Convert floats to strings for JSON serialization
-    serializable_history = [
-        (str(b), even, str(k)) for b, even, k in history
-    ]
-    json_str = json.dumps(serializable_history)
-    with open(path, 'w') as f:
-        f.write(json_str)
 
-def load_history(path):
-    """Load encryption history from JSON file."""
-    raw_history = json.load(open(path, 'r'))
-    # Convert strings back to floats
-    history = [
-        (float(b), even, float(k)) for b, even, k in raw_history
-    ]
-    return history
+def validate_positive_int(value, name):
+    if value <= 0:
+        raise ValueError(f"{name} must be a positive integer.")
 
-def export_result(result, path):
-    """Export result dictionary to JSON file."""
-    json_str = json.dumps(result, indent=2)
-    with open(path, 'w') as f:
-        f.write(json_str)
 
-def read_input(source, arg_name):
-    """Read float input from file or parse directly."""
-    try:
-        with open(source, 'r') as f:
-            data = f.read().strip()
-        value = float(data)
-        logging.debug(f"Read {arg_name} from file '{source}': {value}")
-        return value
-    except FileNotFoundError:
-        try:
-            value = float(source)
-            logging.debug(f"Read {arg_name} from direct input: {value}")
-            return value
-        except Exception as e:
-            logging.error(f"Failed to parse {arg_name}: {e}")
-            raise ValueError(f"Invalid {arg_name} input '{source}'. Must be a float or file containing a float.")
+def extract_float(val):
+    if isinstance(val, (tuple, list)):
+        return extract_float(val[0])
+    return float(val)
 
-def validate_positive_float(value, name):
-    if value < 0.0:
-        raise ValueError(f"{name} must be a non-negative float.")
+
+def generate_surface_data(block, key_start, key_end, steps, rounds, quiet=False):
+    keys = np.linspace(key_start, key_end, steps)
+    values_matrix = np.zeros((steps, rounds))
+    waveform_matrix = np.zeros((steps, rounds))
+    diffusion_matrix = np.zeros((steps, rounds))
+
+    iterator = keys if quiet else tqdm(keys, desc="Generating surface data")
+    for i, k in enumerate(iterator):
+        ciphertext, history, waveform = signal_spiral_encrypt(block, k, rounds=rounds)
+        block_values = [extract_float(h[0]) for h in history]
+        values_matrix[i, :] = block_values
+        waveform_vals = [extract_float(w) for w in waveform]
+        waveform_matrix[i, :] = waveform_vals
+
+        diffusion = [0.0]
+        for prev, curr in zip(block_values[:-1], block_values[1:]):
+            diff = abs(curr - prev) / (abs(prev) + 1e-9)
+            diffusion.append(diff)
+        diffusion_matrix[i, :] = diffusion
+
+        logging.debug(f"Processed key {k}")
+
+    return keys, values_matrix, waveform_matrix, diffusion_matrix
+
+
+def export_stats_csv(keys, diffusion_matrix, waveform_matrix, filename="stats_export.csv"):
+    with open(filename, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["KeyIndex", "KeyValue", "MeanDiffusion", "MeanWaveform"])
+        for i, key in enumerate(keys):
+            mean_diff = np.mean(diffusion_matrix[i])
+            mean_wave = np.mean(waveform_matrix[i])
+            writer.writerow([i, key, mean_diff, mean_wave])
+    print(f"Exported stats to {filename}")
+
+
+def plot_surface(keys, values_matrix, waveform_matrix, diffusion_matrix,
+                 rounds, color_by='waveform', save_path=None, interactive=False,
+                 azim=45, elev=30, colormap_name=None, export_csv=False, animate=False):
+
+    x, y = np.meshgrid(np.arange(rounds), np.arange(len(keys)))
+    z = values_matrix
+
+    if color_by == 'diffusion':
+        w = diffusion_matrix
+        default_cmap = 'plasma'
+        label = 'Diffusion (Normalized Abs Difference)'
+    else:
+        w = waveform_matrix / 255.0
+        default_cmap = 'viridis'
+        label = 'Waveform Intensity'
+
+    cmap_name = colormap_name if colormap_name else default_cmap
+    cmap = plt.get_cmap(cmap_name)
+
+    fig = plt.figure(figsize=(10, 6))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Semi-transparent surface with wireframe edge
+    ax.plot_surface(
+        x, y, z,
+        facecolors=cmap(w),
+        edgecolors='k',
+        linewidth=0.3,
+        antialiased=True,
+        alpha=0.85
+    )
+
+    ax.contourf(x, y, z, zdir='z', offset=z.min(), cmap=cmap, alpha=0.25)
+
+    ax.set_xlabel('Round')
+    ax.set_ylabel('Key Index')
+    ax.set_zlabel('Block Value')
+    ax.set_title(f'3D Surface of Encrypted Block\nColor = {label}  \u2022  View = azim {azim}\u00b0, elev {elev}\u00b0')
+    ax.view_init(elev=elev, azim=azim)
+
+    # Label max and min points
+    max_idx = np.unravel_index(np.argmax(z), z.shape)
+    min_idx = np.unravel_index(np.argmin(z), z.shape)
+    ax.text(max_idx[1], max_idx[0], z[max_idx], "Max", color='red', fontsize=10, weight='bold')
+    ax.text(min_idx[1], min_idx[0], z[min_idx], "Min", color='blue', fontsize=10, weight='bold')
+
+    norm = colors.Normalize(vmin=w.min(), vmax=w.max())
+    m = cm.ScalarMappable(norm=norm, cmap=cmap)
+    m.set_array(w)
+    fig.colorbar(m, ax=ax, shrink=0.5, aspect=12, label=label)
+
+    if export_csv:
+        export_stats_csv(keys, diffusion_matrix, waveform_matrix)
+
+    if animate:
+        import matplotlib.animation as animation
+        def update(frame):
+            ax.view_init(elev=elev, azim=frame)
+            return fig,
+        ani = animation.FuncAnimation(fig, update, frames=np.arange(0, 360, 2), blit=False)
+        gif_path = save_path if save_path and save_path.lower().endswith('.gif') else '3d_surface_rotation.gif'
+        ani.save(gif_path, writer='pillow', fps=20)
+        print(f"Saved animation GIF to {gif_path}")
+        plt.close(fig)
+    elif save_path:
+        plt.savefig(save_path)
+        print(f"Saved plot to {save_path}")
+    else:
+        if interactive:
+            plt.ion()
+        plt.show()
+
 
 def main():
-    parser = argparse.ArgumentParser(description="Collatz Chaos Cipher CLI Tool (float version)")
-    parser.add_argument("--block", help="Plaintext block (float or path to file). Default: 12345.6789")
-    parser.add_argument("--ciphertext", help="Ciphertext (float or path to file) to decrypt")
-    parser.add_argument("--key", help="Encryption key (float or path to file). Default: 98765.4321")
-    parser.add_argument("--encrypt", action="store_true", help="Perform encryption")
-    parser.add_argument("--decrypt", action="store_true", help="Perform decryption")
-    parser.add_argument("--rounds", type=int, default=16, help="Number of encryption rounds (default: 16)")
-    parser.add_argument("--save-history", type=str, help="Path to save encryption history (JSON)")
-    parser.add_argument("--load-history", type=str, help="Path to load encryption history (JSON)")
-    parser.add_argument("--verbose", action="store_true", help="Display round-by-round encryption info")
-    parser.add_argument("--export", type=str, help="Path to export final result (JSON)")
-    parser.add_argument("--output", type=str, help="Write ciphertext or plaintext result to file")
-    parser.add_argument("--debug", action="store_true", help="Enable debug logging to cipher.log")
+    print("\nVisualizing Encryption Chaos: 3D Surface Tool")
+    print("--------------------------------------------------")
+    print("You're witnessing a real-time 3D visualization of how a float-based")
+    print("encryption algorithm (inspired by the Collatz Conjecture) evolves.")
+    print("Each surface point represents a transformed block value across")
+    print("multiple rounds and key variations.\n")
+    print(" Height = Encrypted block value")
+    print(" Color = Either waveform intensity or diffusion")
+    print(" Animated view and statistical CSV export are also supported.")
+    print("--------------------------------------------------\n")
 
+    parser = argparse.ArgumentParser(description="3D Encryption Surface Visualization for Float Collatz Chaos Cipher")
+    parser.add_argument("--block", type=float, default=12345.6789)
+    parser.add_argument("--key-start", type=float, default=100000.0)
+    parser.add_argument("--key-end", type=float, default=1000000.0)
+    parser.add_argument("--steps", type=int, default=200)
+    parser.add_argument("--rounds", type=int, default=100)
+    parser.add_argument("--color-by", choices=['waveform', 'diffusion'], default='waveform')
+    parser.add_argument("--save", type=str)
+    parser.add_argument("--interactive", action="store_true")
+    parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--quiet", action="store_true")
+    parser.add_argument("--azim", type=float, default=45)
+    parser.add_argument("--elev", type=float, default=30)
+    parser.add_argument("--colormap", type=str, default=None)
+    parser.add_argument("--export-csv", action="store_true")
+    parser.add_argument("--animate", action="store_true")
     args = parser.parse_args()
+
     setup_logging(args.debug)
-    logging.info("Started float cipher CLI")
 
-    default_block_float = 12345.6789
-    default_key_float = 98765.4321
-
-    encrypt = args.encrypt
-    decrypt = args.decrypt
-
-    # If neither encrypt nor decrypt flags given, ask interactively
-    if not encrypt and not decrypt:
-        while True:
-            choice = input("Do you want to (E)ncrypt or (D)ecrypt? ").strip().lower()
-            if choice == 'e':
-                encrypt = True
-                break
-            elif choice == 'd':
-                decrypt = True
-                break
-            else:
-                print("Please enter 'E' for encrypt or 'D' for decrypt.")
-
-    # Get key (from arg or input)
     try:
-        if args.key:
-            key = read_input(args.key, "key")
-        else:
-            key_str = input(f"Enter key (default {default_key_float}): ").strip()
-            key = float(key_str) if key_str else default_key_float
-        validate_positive_float(key, "Key")
-    except ValueError as e:
+        validate_positive_int(args.steps, "Steps")
+        validate_positive_int(args.rounds, "Rounds")
+        if args.key_start >= args.key_end:
+            raise ValueError("key-start must be less than key-end")
+
+        keys, values_matrix, waveform_matrix, diffusion_matrix = generate_surface_data(
+            args.block, args.key_start, args.key_end, args.steps, args.rounds, quiet=args.quiet)
+
+        plot_surface(
+            keys,
+            values_matrix,
+            waveform_matrix,
+            diffusion_matrix,
+            args.rounds,
+            color_by=args.color_by,
+            save_path=args.save,
+            interactive=args.interactive,
+            azim=args.azim,
+            elev=args.elev,
+            colormap_name=args.colormap,
+            export_csv=args.export_csv,
+            animate=args.animate
+        )
+
+    except Exception as e:
+        logging.error(f"Error: {e}")
         print(f"Error: {e}")
-        return
 
-    if encrypt:
-        # Get block (from arg or input)
-        if args.block:
-            try:
-                block = read_input(args.block, "block")
-                validate_positive_float(block, "Block")
-            except ValueError as e:
-                print(f"Error: {e}")
-                return
-        else:
-            while True:
-                block_str = input(f"Enter plaintext block (default {default_block_float}): ").strip()
-                if not block_str:
-                    block = default_block_float
-                    break
-                try:
-                    block = float(block_str)
-                    validate_positive_float(block, "Block")
-                    break
-                except ValueError:
-                    print("Invalid input. Please enter a non-negative number.")
-
-        logging.info(f"Encrypting block={block} with key={key}")
-        ciphertext, history, waveform_data = signal_spiral_encrypt(block, key, rounds=args.rounds)
-        print(f"Encrypted: {ciphertext}")
-
-        if args.verbose:
-            for i, (b, even, k) in enumerate(history):
-                state = "Even" if even else "Odd"
-                print(f"Round {i+1:02}: b = {b}, state = {state}, key = {k}")
-
-        if args.save_history:
-            save_history(history, args.save_history)
-            print(f"Saved encryption history to {args.save_history}")
-
-        if args.export:
-            export_result({"ciphertext": ciphertext, "history": history, "waveform": waveform_data}, args.export)
-            print(f"Exported result JSON to {args.export}")
-
-        if args.output:
-            with open(args.output, "w") as f:
-                f.write(f"{ciphertext}\n")
-            print(f"Ciphertext written to {args.output}")
-
-    elif decrypt:
-        # Get ciphertext (from arg or input)
-        if args.ciphertext:
-            try:
-                ciphertext = read_input(args.ciphertext, "ciphertext")
-                validate_positive_float(ciphertext, "Ciphertext")
-            except ValueError as e:
-                print(f"Error: {e}")
-                return
-        else:
-            while True:
-                ciphertext_str = input("Enter ciphertext (float): ").strip()
-                try:
-                    ciphertext = float(ciphertext_str)
-                    validate_positive_float(ciphertext, "Ciphertext")
-                    break
-                except ValueError:
-                    print("Invalid input. Please enter a non-negative number.")
-
-        # Load history file (from arg or input)
-        if args.load_history:
-            try:
-                history = load_history(args.load_history)
-            except Exception as e:
-                print(f"Error loading history file: {e}")
-                return
-        else:
-            while True:
-                history_path = input("Enter path to encryption history JSON file: ").strip()
-                try:
-                    history = load_history(history_path)
-                    break
-                except Exception as e:
-                    print(f"Error loading history file: {e}")
-
-        logging.info(f"Decrypting ciphertext={ciphertext} with key={key}")
-        plaintext = signal_spiral_decrypt(ciphertext, key, history)
-        print(f"Decrypted: {plaintext}")
-
-        if args.export:
-            export_result({"plaintext": plaintext}, args.export)
-            print(f"Exported plaintext JSON to {args.export}")
-
-        if args.output:
-            with open(args.output, "w") as f:
-                f.write(f"{plaintext}\n")
-            print(f"Plaintext written to {args.output}")
 
 if __name__ == "__main__":
     main()
