@@ -1,13 +1,13 @@
-# File: 2DHeatmap.py
+# 2DHeatmap.py
 
 import argparse
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
+from main import signal_spiral_encrypt
 from matplotlib.widgets import Slider
 from functools import lru_cache
 from tqdm import tqdm
-from main import signal_spiral_encrypt  # must be float-compatible cipher
 
 
 def setup_logging(debug=False):
@@ -17,17 +17,12 @@ def setup_logging(debug=False):
 
 @lru_cache(maxsize=None)
 def cached_signal_spiral_encrypt(block, key, rounds):
-    # Cache results to avoid redundant computation
     return signal_spiral_encrypt(block, key, rounds=rounds)
 
 
 def generate_waveform_heatmap(block, key, rounds=100):
-    """Generate heatmap data from waveform LSB per round for a single block/key."""
     _, history, waveform = cached_signal_spiral_encrypt(block, key, rounds)
-    if not waveform:
-        max_wave = 255
-    else:
-        max_wave = int(max(waveform))
+    max_wave = max(waveform) if waveform else 255
     heat = np.zeros((max_wave + 1, rounds), dtype=int)
 
     indices = np.array([int(v) for v in waveform])
@@ -101,96 +96,3 @@ def heatmap_multiple_keys(block, key_start, key_end, steps=100, rounds=50):
     plt.show()
 
 
-def block_to_bits(block, bit_width=64):
-    """Convert integer block to list of bits (MSB first). Works only if block is int."""
-    if not isinstance(block, int):
-        raise TypeError("block_to_bits only supports integer blocks.")
-    # Use numpy unpackbits for performance
-    arr = np.array([block], dtype='>u8').view(np.uint8)
-    bits = np.unpackbits(arr)
-    return bits[-bit_width:]  # last `bit_width` bits
-
-
-def visualize_bit_diffusion(block, key, rounds=16, save=False):
-    """Visualize bit-level diffusion over rounds as a heatmap."""
-    # Only meaningful if block and key are integers
-    if not isinstance(block, int) or not isinstance(key, int):
-        logging.warning("Bit diffusion visualization only supported for integer block/key.")
-        return
-
-    _, history, _ = cached_signal_spiral_encrypt(block, key, rounds)
-
-    bit_matrix = []
-    for state, _, _ in history:
-        bits = block_to_bits(state)
-        bit_matrix.append(bits)
-
-    bit_matrix = np.array(bit_matrix)
-
-    plt.figure(figsize=(12, 6))
-    plt.title("Bit-Level Diffusion Over Encryption Rounds")
-    plt.xlabel("Bit Position (MSB to LSB)")
-    plt.ylabel("Round")
-    plt.imshow(bit_matrix, cmap='Greys', interpolation='nearest', aspect='auto', origin='upper')
-    plt.colorbar(label='Bit Value')
-    plt.tight_layout()
-
-    if save:
-        plt.savefig("bit_diffusion.png")
-        logging.info("Saved bit diffusion visualization to bit_diffusion.png")
-    else:
-        plt.show()
-
-
-def main():
-    parser = argparse.ArgumentParser(description="Collatz Chaos Cipher Heatmap Visualizations")
-    parser.add_argument("--block", type=float, default=12345.6789, help="Plaintext block (float, default: 12345.6789)")
-    parser.add_argument("--key", type=float, default=98765.4321, help="Key (float, default: 98765.4321)")
-    parser.add_argument("--rounds", type=int, default=100, help="Number of rounds (default: 100)")
-    parser.add_argument("--interactive", action="store_true", help="Interactive slider for rounds (waveform heatmap)")
-    parser.add_argument("--multi-key", action="store_true", help="Generate heatmap across multiple keys")
-    parser.add_argument("--key-start", type=float, default=100_000.0, help="Start key for multi-key mode (default: 100000.0)")
-    parser.add_argument("--key-end", type=float, default=1_000_000.0, help="End key for multi-key mode (default: 1000000.0)")
-    parser.add_argument("--bit-diffusion", action="store_true", help="Visualize bit-level diffusion heatmap (int block/key only)")
-    parser.add_argument("--save", action="store_true", help="Save visualizations instead of showing them")
-    parser.add_argument("--debug", action="store_true", help="Enable debug logging")
-
-    args = parser.parse_args()
-    setup_logging(args.debug)
-
-    # Convert block/key to int for bit diffusion if needed
-    block_val = args.block
-    key_val = args.key
-    if args.bit_diffusion:
-        # Ensure block and key are ints
-        try:
-            block_int = int(block_val)
-            key_int = int(key_val)
-        except Exception as e:
-            logging.error(f"Cannot convert block/key to int for bit diffusion: {e}")
-            return
-        visualize_bit_diffusion(block_int, key_int, rounds=args.rounds, save=args.save)
-        return
-
-    if args.multi_key:
-        heatmap_multiple_keys(block_val, args.key_start, args.key_end, steps=100, rounds=args.rounds)
-        return
-
-    if args.key is None:
-        logging.error("Error: --key is required unless using --multi-key or --bit-diffusion.")
-        return
-
-    if args.interactive:
-        interactive_waveform_heatmap(block_val, key_val, max_rounds=args.rounds)
-    else:
-        heat = generate_waveform_heatmap(block_val, key_val, rounds=args.rounds)
-        plot_heatmap(
-            heat,
-            title="Collatz Chaos Cipher Waveform Heatmap",
-            xlabel="Round Number",
-            ylabel="Waveform Value (LSB of Block)",
-        )
-
-
-if __name__ == "__main__":
-    main()
