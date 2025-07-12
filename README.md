@@ -25,7 +25,7 @@ Avalanche effect tests and entropy tracking for cryptanalysis support
 
 Academic documentation and invitation for community cryptanalysis contributions
 
-Branded assets including chaos spiral logos and SVG/PNG graphics
+Branded assets, including chaos spiral logos and SVG/PNG graphics
 #
 #
 **Intended Audience:**
@@ -92,7 +92,7 @@ Edit
 
 ./run_tests.sh
 #
-Or run unit tests manually:
+**Or run unit tests manually:**
 
 bash
 
