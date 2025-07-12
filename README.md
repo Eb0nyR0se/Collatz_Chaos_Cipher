@@ -1,6 +1,6 @@
 # **Collatz Chaos Cipher** 🌀 
 #
-#
+
 The Collatz Chaos Cipher is an experimental 256-bit block encryption system that fuses elliptic curve cryptography with a novel non-integer extension of the Collatz Conjecture. Inspired by the famous 3x+1 function, this cipher applies chaotic, nonlinear transformations on floating-point data blocks, producing irreversible, high-entropy pathways that exhibit sensitivity to initial conditions and are visually demonstrable.
 
 
