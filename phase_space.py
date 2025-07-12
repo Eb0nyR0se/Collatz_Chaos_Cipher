@@ -1,59 +1,77 @@
 # File: phase_space.py
 
-import matplotlib.pyplot as plt
-from main import signal_spiral_encrypt
+from matplotlib import pyplot as plt
+from matplotlib.widgets import Slider, Button
+import numpy as np
+from cipher_core import signal_spiral_encrypt
 
 
-def phase_space_plot(init_block, init_key, num_rounds=100):
+def interactive_phase_space():
     """
-    Generate a phase space plot from the signal_spiral_encrypt history.
+    Interactive phase space plot with sliders for block, key, and number of rounds.
     """
-    ciphertext, history, _ = signal_spiral_encrypt(init_block, init_key, rounds=num_rounds)
+    # Default parameters
+    block = 0.5
+    key = 0.5
+    rounds = 100
+
+    # Initial encryption to populate plot
+    ciphertext, history, _ = signal_spiral_encrypt(block, key, rounds=rounds)
     values = [h[0] for h in history]
-
     x = values[:-1]
     y = values[1:]
 
-    plt.figure(figsize=(8, 6))
-    plt.scatter(x, y, s=10, alpha=0.6)
-    plt.title("Phase Space Plot")
-    plt.xlabel("Value at step n")
-    plt.ylabel("Value at step n+1")
-    plt.grid(True)
+    # Create figure and axis
+    fig, ax = plt.subplots(figsize=(8, 6))
+    plt.subplots_adjust(left=0.1, bottom=0.3)
+    scatter = ax.scatter(x, y, s=10, alpha=0.6, c='purple')
+    ax.set_title("Phase Space Plot")
+    ax.set_xlabel("Value at step n")
+    ax.set_ylabel("Value at step n+1")
+    ax.grid(True)
+
+    # Slider axes
+    ax_block = plt.axes([0.1, 0.2, 0.8, 0.03])
+    ax_key = plt.axes([0.1, 0.15, 0.8, 0.03])
+    ax_rounds = plt.axes([0.1, 0.1, 0.8, 0.03])
+
+    # Create sliders
+    slider_block = Slider(ax_block, 'Block', 0.0, 1.0, valinit=block, valstep=0.01)
+    slider_key = Slider(ax_key, 'Key', 0.0, 1.0, valinit=key, valstep=0.01)
+    slider_rounds = Slider(ax_rounds, 'Rounds', 10, 500, valinit=rounds, valstep=1)
+
+    def update(val):
+        b = slider_block.val
+        k = slider_key.val
+        r = int(slider_rounds.val)
+        _, history, _ = signal_spiral_encrypt(b, k, rounds=r)
+        values = [h[0] for h in history]
+        x = values[:-1]
+        y = values[1:]
+
+        # Update scatter data
+        scatter.set_offsets(np.column_stack((x, y)))
+        ax.relim()
+        ax.autoscale_view()
+        fig.canvas.draw_idle()
+
+    slider_block.on_changed(update)
+    slider_key.on_changed(update)
+    slider_rounds.on_changed(update)
+
+    # Reset button
+    reset_ax = plt.axes([0.8, 0.925, 0.1, 0.04])
+    button = Button(reset_ax, 'Reset', hovercolor='0.975')
+
+    def reset(event):
+        slider_block.reset()
+        slider_key.reset()
+        slider_rounds.reset()
+
+    button.on_clicked(reset)
+
     plt.show()
 
 
-def prompt_float(prompt_text, default):
-    while True:
-        try:
-            val = input(f"{prompt_text} [default: {default}]: ").strip()
-            if val == "":
-                return float(default)
-            if val.lower().startswith("0x"):
-                return float(int(val, 16))
-            return float(val)
-        except ValueError:
-            print("Invalid input. Please enter a float or hex (e.g., 0x1234).")
-
-
-def prompt_int(prompt_text, default):
-    while True:
-        try:
-            val = input(f"{prompt_text} [default: {default}]: ").strip()
-            if val == "":
-                return default
-            iv = int(val)
-            if iv <= 0:
-                print("Please enter a positive integer.")
-                continue
-            return iv
-        except ValueError:
-            print("Invalid input. Please enter a valid integer.")
-
-
 if __name__ == "__main__":
-    user_block = prompt_float("Enter block (float or hex)", "0x1122334455")
-    user_key = prompt_float("Enter key (float or hex)", "0x4242424242424242")
-    user_rounds = prompt_int("Enter number of rounds", 200)
-
-    phase_space_plot(user_block, user_key, user_rounds)
+    interactive_phase_space()
