@@ -11,7 +11,7 @@ from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from ecdsa import SECP256k1, SigningKey
 
-# ------------------------ Encryption Core ------------------------
+# Encryption Core 
 
 def signal_spiral_encrypt(block: float, key: float, rounds: int = 100):
     history = []
@@ -39,7 +39,7 @@ def signal_spiral_encrypt(block: float, key: float, rounds: int = 100):
 def signal_spiral_decrypt(ciphertext: float, key: float, rounds: int = 100):
     return ciphertext  # Placeholder for future decryption logic
 
-# ------------------------ EC Key Derivation ------------------------
+# EC Key Derivation 
 
 def derive_key_from_ec(seed: str = "") -> float:
     sk = SigningKey.generate(curve=SECP256k1)
@@ -48,7 +48,7 @@ def derive_key_from_ec(seed: str = "") -> float:
     key_int = int.from_bytes(key_bytes, 'big')
     return key_int / 1e9
 
-# ------------------------ Encryption Handlers ------------------------
+# Encryption Handlers 
 
 def handle_encrypt(block, key, rounds):
     ciphertext, _, _ = signal_spiral_encrypt(block, key, rounds=rounds)
@@ -58,7 +58,7 @@ def handle_decrypt(block, key, rounds):
     plaintext = signal_spiral_decrypt(block, key, rounds=rounds)
     print(f"\nDecryption not reversible, placeholder result: {plaintext}\n")
 
-# ------------------------ Bifurcation Logic ------------------------
+# Bifurcation Logic 
 
 def bifurcation_diagram(block, key_start, key_end, steps=200, rounds=30, workers=4, use_ec_seed=False, ec_seed_str=""):
     if use_ec_seed:
@@ -95,7 +95,7 @@ def plot_bifurcation(keys, values):
     plt.tight_layout()
     plt.show()
 
-# ------------------------ Interactive Bifurcation Visualization ------------------------
+# Interactive Bifurcation Visualization
 
 def interactive_bifurcation():
     """
@@ -216,7 +216,7 @@ def interactive_bifurcation():
 
 
 
-# ------------------------ Interactive Visual Menu ------------------------
+# Interactive Visual Menu 
 
 def handle_visualize(block, key, rounds):
     while True:
@@ -271,7 +271,6 @@ def handle_visualize(block, key, rounds):
 
 
 
-# Optional: simple test run if this file is executed directly
 if __name__ == "__main__":
     block = 0.5
     key = 0.1
