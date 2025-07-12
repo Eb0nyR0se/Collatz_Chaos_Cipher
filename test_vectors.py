@@ -1,7 +1,8 @@
 # File: test_vectors.py
 
+
 import argparse
-from main import signal_spiral_encrypt, signal_spiral_decrypt
+from cipher_core import signal_spiral_decrypt, signal_spiral_encrypt
 
 
 def run_test_vectors(custom_plaintext=None, custom_key=None, custom_rounds=16):
@@ -69,5 +70,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
