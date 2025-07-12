@@ -1,94 +1,116 @@
-# 🌀 Collatz Chaos Cipher
-
-Welcome to the **Collatz Chaos Cipher**, a curiosity-driven encryption experiment inspired by the Collatz Conjecture, which explores the intersection of mathematics, chaos theory, and signal processing. This project implements a reversible block cipher inspired by the famous 3x+1 Collatz function, extended with signal spiral dynamics.
-
-Unlike conventional ciphers, this one leverages chaotic iteration and non-linear key transformations to produce unpredictable, avalanche-prone encrypted outputs. Alongside the core algorithm, the repository includes visualization tools to animate bit diffusion and waveform transformations during encryption rounds.
-
-This repository is ideal for cryptographers, mathematicians, chaos enthusiasts, and curious minds interested in experimental encryption techniques that are not yet suitable for production use.
+# 
+#
+🌀 Collatz Chaos Cipher
 #
 #
-### ✨ Features
+The Collatz Chaos Cipher is an experimental 256-bit block encryption system that fuses elliptic curve cryptography with a novel non-integer extension of the Collatz Conjecture. Inspired by the famous 3x+1 function, this cipher applies chaotic, nonlinear transformations on floating-point data blocks, producing irreversible, high-entropy pathways that exhibit sensitivity to initial conditions and are visually demonstrable.
 
-- 🔐 Chaotic block cipher built from 3x+1 logic, signal spirals, and entropy mutations  
-- 🔄 Reversible encryption using a chaotic 3x+1 float function  
-- 🌀 Signal spiral logic with non-linear key influence  
-- 🎞️ Real-time visualizer for bit diffusion across rounds  
-- 📈 Avalanche test harness and entropy tracker  
-- 🧠 Academic journal + call for cryptanalysis contributions  
-- 🖼️ Branded logo + real chaos spiral (SVG/PNG)  
-#
-#
-### 🔬 Intended For
 
-- Cryptographers, theorists, and chaos enthusiasts  
-- Anyone exploring the intersection of math, signals, and encryption  
-- Curious minds interested in experimental cryptography (NOT production-ready!)
+Unlike traditional ciphers, the Collatz Chaos Cipher leverages chaotic iteration, signal spiral dynamics, and non-linear key influence to generate avalanche-prone encrypted outputs. The project also includes visualization tools to animate bit diffusion, waveform transformations, and entropy changes during encryption rounds, providing insight into the cipher’s complex behavior.
 #
 #
-### ⚠️ Important Disclaimer
+Features:
 
-For educational and experimental purposes only! This is **NOT** secure encryption.  
-It’s a toy example demonstrating how a Collatz-inspired iterative function can be used as a pseudorandom transform.
+256-bit encryption combining elliptic curve cryptography with Collatz-inspired chaos
+
+Non-integer Collatz Conjecture extension, using floating-point arithmetic for dynamic iteration
+
+Signal spiral logic influencing key transformation non-linearly
+
+Reversible block cipher design enabling decryption via inverse chaotic transforms
+
+Real-time visualization of bit diffusion and waveform evolution across rounds
+
+Avalanche effect tests and entropy tracking for cryptanalysis support
+
+Academic documentation and invitation for community cryptanalysis contributions
+
+Branded assets including chaos spiral logos and SVG/PNG graphics
 #
 #
-### 🧪 Running Tests
+Intended Audience:
 
-First-time setup (required once):
 
-Make the test script executable by running:
+Cryptographers and security researchers interested in experimental cryptography
+
+Mathematicians and chaos theorists studying complex dynamical systems
+
+Signal processing enthusiasts exploring novel encryption concepts
+
+Developers and hobbyists curious about non-traditional block cipher design
+#
+#
+Important Disclaimer:
+
+For educational and experimental purposes only! This is NOT secure encryption. It’s a toy example demonstrating how a Collatz-inspired iterative function can be used as a pseudorandom transform.
+#
+#
+Installation:
+
+Clone the repository:
 
 bash
 
-cd path/to/collatz_chaos_cipher
+Copy
+
+Edit
+
+git clone https://github.com/yourusername/collatz-chaos-cipher.git
+cd collatz-chaos-cipher
+
+
+Ensure you have Python 3.x and dependencies installed (e.g., matplotlib, numpy):
+#
+bash
+
+Copy
+
+Edit
+
+pip install -r requirements.txt
+
+Running Tests
+
+Make the test script executable once:
+#
+bash
+
+Copy
+
+Edit
+
 chmod +x run_tests.sh
-#
-After that, to execute all tests in one step, you can run:
 
+Run all tests:
+#
 bash
+
+Copy
+
+Edit
 
 ./run_tests.sh
-#
-To verify the correctness of the cipher, automated unit tests are included. Run them from the project root directory using:
 
+Or run unit tests manually:
+#
 bash
+
+Copy
+
+Edit
 
 python -m unittest test_vectors.py
 #
-Or use the provided test runner script:
+$
+Visualization:
 
-bash
+The project provides detailed plots visualizing the cipher’s behavior:
 
-./run_tests.sh
+Non-integer Collatz trajectories: Evolution of various floating-point starting values under the extended Collatz rule (even: x/2, odd: (3x+1)/2), revealing chaotic decay patterns.
+
+Encryption rounds: Plots showing block values over rounds, with parity indicated, alongside least significant byte waveforms demonstrating bit-level diffusion and nonlinear transformations.
 #
 #
-“What looks like madness may just be an orbit not yet closed.”
+Contribution:
 
-
-This fractal, generated from a Collatz-like function extended into the complex plane, represents the chaotic seed behind the Collatz Chaos Cipher. 
-
-![Collatz Fractal](./assets/images/collatz_fractal.png)
-#
-#
-Here's a visualization of the non-integer Collatz-like trajectories. 
-
-Each line represents how a different non-integer starting value evolves under the (even: x/2, odd: (3x+1)/2) rule. 
-
-You can see chaotic decay patterns that hint at sensitive dependence on initial conditions, a hallmark of complex dynamical systems.
-
-
-![Non-Integer Collatz-Conjuncture Trajectories](./assets/images/non-integer_collatz-conjecture_trajectories.png)
-#
-#
-Here is a visualization of the Collatz Chaos Cipher in action:
-
-
-Top Plot: Shows how the block value evolves over 16 rounds of encryption. Blue points represent even rounds, and red points represent odd rounds based on the block parity.
-
-Bottom Plot: Displays the least significant byte (LSB) from each round, forming a waveform that captures bit-level transformations.
-
-This dual-view helps illustrate the cipher's nonlinear behavior and bit-level diffusion.
-
-![Encryption Path (Block Values Over Rounds)](./assets/images/encryption_path.png)
-#
-#
-Explore the chaos. Encrypt with curves. Challenge convention.
+Contributions, cryptanalysis, and academic discussion are welcome. Please submit issues or pull requests via GitHub.
