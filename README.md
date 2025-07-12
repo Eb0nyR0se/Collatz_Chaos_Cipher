@@ -1,5 +1,3 @@
-# 
-#
 **Collatz Chaos Cipher** 🌀 
 #
 #
